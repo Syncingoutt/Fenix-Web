@@ -22,14 +22,17 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+
+      - name: Cache Electron downloads
+        uses: actions/cache@v4
+        with:
+          path: |
+            C:\Users\runneradmin\AppData\Local\electron\Cache
+            C:\Users\runneradmin\AppData\Local\electron-builder\Cache
+          key: electron-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       
       - name: Install dependencies
         run: npm ci
-      
-      - name: Build application
-        run: npm run build
-        env:
-          CI: false
       
       - name: Build with Electron Builder
         run: npm run package

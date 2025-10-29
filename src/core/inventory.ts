@@ -19,6 +19,11 @@ export class InventoryManager {
     for (const [baseId, price] of Object.entries(initialPriceCache)) {
       this.priceCache.set(baseId, price);
     }
+
+    // Ensure default price for Flame Elementium (baseId 100300) is 1 if not present
+    if (!this.priceCache.has('100300')) {
+      this.priceCache.set('100300', 1);
+    }
   }
 
   buildInventory(logEntries: ParsedLogEntry[]): Map<string, InventoryItem> {
