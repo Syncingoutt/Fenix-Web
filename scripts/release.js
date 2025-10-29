@@ -77,5 +77,5 @@ try {
 console.log('\n🎉 Release process started!');
 console.log(`📋 Version ${newVersion} has been pushed to GitHub with tag ${tagName}`);
 console.log('⏳ GitHub Actions will now build and create the release automatically.');
-console.log('💡 You can monitor the progress at: https://github.com/YOUR_USERNAME/torchlight-tracker/actions');
+console.log('💡 You can monitor the progress at: https://github.com/Syncingoutt/Torchlight-Exchange-2/actions');
 
