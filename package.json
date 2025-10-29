@@ -1,6 +1,6 @@
 {
   "name": "torchlight-tracker",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Torchlight Infinite Inventory Tracker",
   "main": "dist/main.js",
   "scripts": {
@@ -23,8 +23,7 @@
       "!src/**/*"
     ],
     "win": {
-      "target": "portable",
-      "publisherName": "Torchlight Tracker"
+      "target": "portable"
     },
     "publish": {
       "provider": "github",
