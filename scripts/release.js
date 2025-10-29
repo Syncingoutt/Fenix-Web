@@ -12,6 +12,10 @@ const [major, minor, patch] = packageJson.version.split('.').map(Number);
 const newVersion = `${major}.${minor}.${patch + 1}`;
 const tagName = `v${newVersion}`;
 
+// Optional commit message from CLI args
+const userMessage = process.argv.slice(2).join(' ').trim();
+const commitMessage = userMessage ? userMessage : `Release ${tagName}`;
+
 console.log(`🚀 Releasing version ${newVersion}...`);
 console.log(`📦 Current version: ${packageJson.version}`);
 console.log(`✨ New version: ${newVersion}`);
@@ -45,7 +49,9 @@ try {
   
   // Commit all changes
   console.log('💾 Committing changes...');
-  execSync(`git commit -m "Release ${tagName}"`, { stdio: 'inherit', cwd: path.join(__dirname, '..') });
+  // Escape double quotes in user message to avoid breaking the command
+  const safeMessage = commitMessage.replace(/"/g, '\\"');
+  execSync(`git commit -m "${safeMessage}"`, { stdio: 'inherit', cwd: path.join(__dirname, '..') });
   console.log('✅ Changes committed');
 } catch (error) {
   console.error('❌ Failed to commit changes:', error.message);
