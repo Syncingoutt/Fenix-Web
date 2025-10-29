@@ -53,10 +53,9 @@ jobs:
           $exe = $exeFiles[0]
           Write-Host "✅ Found executable: $($exe.Name) at $($exe.FullName)"
           
-          # Copy both files to a release_assets directory for easier upload
+          # Copy the installer to a release_assets directory for easier upload
           New-Item -ItemType Directory -Path "release_assets" -Force | Out-Null
           Copy-Item $exe.FullName "release_assets/$($exe.Name)"
-          Copy-Item "item_database.json" "release_assets/item_database.json"
           
           Write-Host "✅ Release files prepared"
       
@@ -72,7 +71,6 @@ jobs:
             **Installation:**
             - Download the `.exe` file from the assets below
             - Run it to install/update the application
-            - The `item_database.json` is included for reference
             
             **Changes:**
             See the commit history for details.

@@ -1,6 +1,6 @@
 {
   "name": "torchlight-tracker",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Torchlight Infinite Inventory Tracker",
   "main": "dist/main.js",
   "scripts": {
@@ -13,17 +13,25 @@
   "build": {
     "appId": "com.torchlight.tracker",
     "productName": "Torchlight Tracker",
+    "artifactName": "Torchlight Tracker Setup.${ext}",
     "directories": {
       "output": "release"
     },
     "files": [
       "dist/**/*",
-      "item_database.json",
       "package.json",
       "!src/**/*"
     ],
     "win": {
       "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Torchlight Tracker",
+      "runAfterFinish": true
     },
     "publish": {
       "provider": "github",
