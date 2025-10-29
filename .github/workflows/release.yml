@@ -1,0 +1,84 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on tags like v1.0.1, v1.1.0, etc.
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build application
+        run: npm run build
+        env:
+          CI: false
+      
+      - name: Build with Electron Builder
+        run: npm run package
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Get version from package.json
+        id: package-version
+        uses: tj-actions/json@v5
+        with:
+          file: package.json
+          field: version
+      
+      - name: Prepare release files
+        shell: pwsh
+        run: |
+          # Find the .exe file (could be in root of release or in a subdirectory)
+          $exeFiles = Get-ChildItem -Path "release" -Filter "*.exe" -Recurse
+          if ($exeFiles.Count -eq 0) {
+            Write-Host "❌ No .exe file found in release directory"
+            Get-ChildItem -Path "release" -Recurse | ForEach-Object { Write-Host $_.FullName }
+            exit 1
+          }
+          
+          # Use the first .exe found (usually there's only one)
+          $exe = $exeFiles[0]
+          Write-Host "✅ Found executable: $($exe.Name) at $($exe.FullName)"
+          
+          # Copy both files to a release_assets directory for easier upload
+          New-Item -ItemType Directory -Path "release_assets" -Force | Out-Null
+          Copy-Item $exe.FullName "release_assets/$($exe.Name)"
+          Copy-Item "item_database.json" "release_assets/item_database.json"
+          
+          Write-Host "✅ Release files prepared"
+      
+      - name: Upload release artifacts
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release_assets/**
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: |
+            ## Version ${{ steps.package-version.outputs.value }}
+            
+            **Installation:**
+            - Download the `.exe` file from the assets below
+            - Run it to install/update the application
+            - The `item_database.json` is included for reference
+            
+            **Changes:**
+            See the commit history for details.
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

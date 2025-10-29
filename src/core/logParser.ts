@@ -1,0 +1,176 @@
+import * as fs from 'fs';
+
+export interface ParsedLogEntry {
+  timestamp: string;
+  action: string;
+  fullId: string;
+  baseId: string;
+  bagNum: number;
+  slotId: number | null;
+  pageId: number | null;
+}
+
+export interface PriceCheckData {
+  baseId: string;
+  prices: number[];
+  timestamp: string;
+}
+
+const LOG_PATH = 'C:\\Program Files (x86)\\Steam\\steamapps\\common\\Torchlight Infinite\\UE_game\\TorchLight\\Saved\\Logs\\UE_Game.log';
+
+function extractBaseId(fullId: string): string {
+  return fullId.split('_')[0];
+}
+
+export function parseLogLine(line: string): ParsedLogEntry | null {
+  const idMatch = line.match(/Id=([^\s]+)/);
+  if (!idMatch) return null;
+  
+  const fullId = idMatch[1];
+  const baseId = extractBaseId(fullId);
+
+  const bagMatch = line.match(/BagNum=(\d+)/);
+  if (!bagMatch) return null;
+  const bagNum = parseInt(bagMatch[1]);
+
+  const pageMatch = line.match(/PageId=(\d+)/);
+  const pageId = pageMatch ? parseInt(pageMatch[1]) : null;
+  
+  if (pageId !== 102 && pageId !== 103) {
+    return null;
+  }
+
+  const timestampMatch = line.match(/\[([\d\.\-:]+)\]/);
+  const timestamp = timestampMatch ? timestampMatch[1] : 'unknown';
+
+  let action = 'Unknown';
+  if (line.includes('ItemChange@ Add')) action = 'Add';
+  else if (line.includes('ItemChange@ Update')) action = 'Update';
+  else if (line.includes('ItemChange@ Remove')) action = 'Remove';
+
+  const slotMatch = line.match(/SlotId=(\d+)/);
+  const slotId = slotMatch ? parseInt(slotMatch[1]) : null;
+
+  return {
+    timestamp,
+    action,
+    fullId,
+    baseId,
+    bagNum,
+    slotId,
+    pageId
+  };
+}
+
+export function readLogFile(): ParsedLogEntry[] {
+  if (!fs.existsSync(LOG_PATH)) {
+    console.error(`❌ Log file not found at: ${LOG_PATH}`);
+    return [];
+  }
+
+  const logContent = fs.readFileSync(LOG_PATH, 'utf-8');
+  const lines = logContent.split('\n');
+
+  // Find the LAST "Reset" for EACH PageId (102 and 103)
+  let lastReset102 = -1;
+  let lastReset103 = -1;
+
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const line = lines[i];
+    if (line.includes('ItemChange@ Reset PageId=102') && lastReset102 === -1) {
+      lastReset102 = i;
+    }
+    if (line.includes('ItemChange@ Reset PageId=103') && lastReset103 === -1) {
+      lastReset103 = i;
+    }
+    // Stop searching once we found both
+    if (lastReset102 !== -1 && lastReset103 !== -1) break;
+  }
+
+  // Use the earliest reset between the two pages (or 0 if none found)
+  const startIndex = Math.min(
+    lastReset102 === -1 ? Infinity : lastReset102,
+    lastReset103 === -1 ? Infinity : lastReset103
+  );
+  
+  const relevantLines = startIndex === Infinity ? lines : lines.slice(startIndex);
+
+  const entries: ParsedLogEntry[] = [];
+  
+  for (const line of relevantLines) {
+    if (line.includes('ItemChange@') && line.includes('Id=')) {
+      const parsed = parseLogLine(line);
+      if (parsed) {
+        entries.push(parsed);
+      }
+    }
+  }
+
+  return entries;
+}
+
+export function parsePriceCheck(lines: string[]): PriceCheckData | null {
+  let baseId: string | null = null;
+  let prices: number[] = [];
+  let timestamp = 'unknown';
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    if (i === 0) {
+      const timestampMatch = line.match(/\[([\d\.\-:]+)\]/);
+      if (timestampMatch) timestamp = timestampMatch[1];
+    }
+
+    if (line.includes('+itemBaseId') && line.includes('[')) {
+      const match = line.match(/\[(\d+)\]/);
+      if (match) {
+        baseId = match[1];
+      }
+    }
+
+    if ((line.includes('+unitPrices+') || line.includes('|          +')) && line.includes('[')) {
+      const match = line.match(/\[([0-9.]+)\]/);
+      if (match) {
+        const price = parseFloat(match[1]);
+        if (!isNaN(price)) {
+          prices.push(price);
+        }
+      }
+    }
+  }
+
+  console.log(`🔍 Parse attempt - BaseID: ${baseId}, Prices found: ${prices.length}`);
+
+  if (baseId && prices.length === 100) {
+    return { baseId, prices, timestamp };
+  }
+
+  // Debug: show what we got if it failed
+  if (baseId) {
+    console.log(`⚠️  Expected 100 prices but got ${prices.length}`);
+    if (lines.length < 50) {
+      console.log(`⚠️  Buffer only has ${lines.length} lines - may need to wait longer`);
+    }
+  }
+
+  return null;
+}
+
+export function getLogPath(): string {
+  return LOG_PATH;
+}
+
+export function getLogSize(): number {
+  if (!fs.existsSync(LOG_PATH)) return 0;
+  const stats = fs.statSync(LOG_PATH);
+  return stats.size;
+}
+
+export function readLogFromPosition(start: number, end: number): string {
+  const buffer = Buffer.alloc(end - start);
+  const fd = fs.openSync(LOG_PATH, 'r');
+  fs.readSync(fd, buffer, 0, end - start, start);
+  fs.closeSync(fd);
+  return buffer.toString('utf-8');
+}

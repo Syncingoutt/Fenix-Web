@@ -1,0 +1,11 @@
+node_modules/
+dist/
+release/
+release_assets/
+price_cache.json
+.DS_Store
+Thumbs.db
+*.log
+*.tgz
+.env
+.env.*

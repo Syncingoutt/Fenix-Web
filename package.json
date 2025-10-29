@@ -1,0 +1,53 @@
+{
+  "name": "torchlight-tracker",
+  "version": "1.0.0",
+  "description": "Torchlight Infinite Inventory Tracker",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc && xcopy \"src\\ui\" \"dist\\ui\" /E /I /Y",
+    "start": "npm run build && electron .",
+    "dev": "tsc && xcopy \"src\\ui\" \"dist\\ui\" /E /I /Y && electron .",
+    "package": "npm run build && electron-builder",
+    "prod": "node scripts/release.js"
+  },
+  "build": {
+    "appId": "com.torchlight.tracker",
+    "productName": "Torchlight Tracker",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "item_database.json",
+      "package.json",
+      "!src/**/*"
+    ],
+    "win": {
+      "target": "portable",
+      "publisherName": "Torchlight Tracker"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "Syncingoutt",
+      "repo": "Torchlight-Exchange-2",
+      "private": true
+    },
+    "extraResources": [
+      "item_database.json"
+    ]
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/electron": "^1.6.12",
+    "@types/node": "^24.9.1",
+    "concurrently": "^9.2.1",
+    "electron": "^39.0.0",
+    "electron-builder": "^26.0.12",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "electron-updater": "^6.6.2"
+  }
+}
