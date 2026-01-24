@@ -11,7 +11,7 @@ export function initUIEvents(
   closeSettingsModal = settingsModalCloseFn;
   
   // File upload button handler
-  const uploadLogBtn = document.getElementById('uploadLogBtn');
+  const uploadLogBtn = document.getElementById('uploadLogBtn') as HTMLButtonElement | null;
   if (uploadLogBtn) {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
