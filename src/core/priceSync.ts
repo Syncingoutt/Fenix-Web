@@ -2,6 +2,7 @@ import { initializeApp, FirebaseApp } from 'firebase/app';
 import { getAuth, signInAnonymously, Auth } from 'firebase/auth';
 import { getFirestore, Firestore, Timestamp, collection, getDocs } from 'firebase/firestore';
 import { PriceCache, loadPriceCache } from './database';
+import { updatePriceHistoryCache } from './priceHistoryStore';
 
 type SyncConsent = 'pending' | 'granted' | 'denied';
 
@@ -295,12 +296,13 @@ export class PriceSyncService {
         }
       });
 
+      const pricesWithHistory = await updatePriceHistoryCache(prices);
       this.lastSyncAt = now;
       saveLastSyncAt(now);
-      this.lastSyncCache = prices;
+      this.lastSyncCache = pricesWithHistory;
       this.lastCacheUpdatedAt = lastUpdatedAt;
       this.lastCacheError = null;
-      return prices;
+      return pricesWithHistory;
     } catch (error) {
       console.error('Failed to sync prices from Firestore:', error);
       this.lastCacheError = 'Failed to read prices';

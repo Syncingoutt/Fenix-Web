@@ -122,6 +122,18 @@ export class InventoryManager {
     }
   }
 
+  applyPriceCache(cache: PriceCache): void {
+    for (const [baseId, entry] of Object.entries(cache)) {
+      this.priceCache.set(baseId, entry);
+
+      if (this.inventory.has(baseId)) {
+        const item = this.inventory.get(baseId)!;
+        item.price = entry.price;
+        item.priceTimestamp = entry.timestamp;
+      }
+    }
+  }
+
   getInventory(): InventoryItem[] {
     return Array.from(this.inventory.values())
       .filter(item => {

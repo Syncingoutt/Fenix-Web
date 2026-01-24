@@ -57,14 +57,7 @@ export async function initializeWebAPI(): Promise<void> {
     if (priceSyncService) {
       const cloudCache = await priceSyncService.syncPrices();
       if (inventoryManager) {
-        const localCache = inventoryManager.getPriceCacheAsObject();
-        // Merge cloud prices into local cache
-        for (const [baseId, cloudEntry] of Object.entries(cloudCache)) {
-          const localEntry = localCache[baseId];
-          if (!localEntry || cloudEntry.timestamp > localEntry.timestamp) {
-            inventoryManager.updatePrice(baseId, cloudEntry.price, cloudEntry.listingCount, cloudEntry.timestamp);
-          }
-        }
+        inventoryManager.applyPriceCache(cloudCache);
         await savePriceCache(inventoryManager.getPriceCacheAsObject());
         notifyInventoryUpdate();
       }
@@ -327,9 +320,7 @@ export async function handleLogFileUpload(file: File): Promise<void> {
           // Fetch latest prices after upload so user doesn't need refresh
           if (priceSyncService) {
             const cloudCache = await priceSyncService.syncPrices({ forceFull: true });
-            for (const [baseId, cloudEntry] of Object.entries(cloudCache)) {
-              inventoryManager.updatePrice(baseId, cloudEntry.price, cloudEntry.listingCount, cloudEntry.timestamp);
-            }
+            inventoryManager.applyPriceCache(cloudCache);
           }
 
           await savePriceCache(inventoryManager.getPriceCacheAsObject());

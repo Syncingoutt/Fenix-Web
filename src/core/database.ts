@@ -1,3 +1,5 @@
+import { loadPriceHistoryMap } from './priceHistoryStore';
+
 export interface ItemData {
   name: string;
   tradable?: boolean; // Optional for backwards compatibility, defaults to true if not specified
@@ -123,6 +125,15 @@ export async function loadPriceCache(
       }
       
       localCache = migratedCache;
+    }
+
+    const historyMap = await loadPriceHistoryMap();
+    if (Object.keys(historyMap).length > 0) {
+      for (const [baseId, history] of Object.entries(historyMap)) {
+        if (localCache[baseId]) {
+          localCache[baseId] = { ...localCache[baseId], history };
+        }
+      }
     }
 
     if (!cloudCacheProvider) {

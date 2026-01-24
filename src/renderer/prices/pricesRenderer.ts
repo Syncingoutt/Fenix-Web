@@ -488,6 +488,7 @@ export function initPrices(): void {
       }
     });
   });
+
   
   // Sidebar group filter handlers
   const sidebarItems = document.querySelectorAll('.prices-sidebar-item');
