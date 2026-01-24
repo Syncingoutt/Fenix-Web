@@ -133,6 +133,11 @@ export const webAPI = {
     return inventoryManager.getPriceCacheAsObject();
   },
 
+  getPriceCacheStatus(): { lastUpdated: number | null } {
+    if (!priceSyncService) return { lastUpdated: null };
+    return priceSyncService.getCacheStatus();
+  },
+
   onInventoryUpdate(callback: () => void): void {
     inventoryUpdateCallbacks.push(callback);
   },

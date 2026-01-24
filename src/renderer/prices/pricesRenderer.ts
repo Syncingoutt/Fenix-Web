@@ -29,10 +29,23 @@ let itemDatabase: ItemDatabase = {};
 let priceCache: PriceCache = {};
 let allPriceItems: PriceItem[] = [];
 let filteredPriceItems: PriceItem[] = [];
-let sortColumn: string = 'name';
-let sortDirection: 'asc' | 'desc' = 'asc';
 let currentGroup: string = 'currency';
 let currentSearchTerm: string = '';
+let sortColumn: string = 'price';
+let sortDirection: 'asc' | 'desc' = 'desc';
+
+function formatLastUpdated(value: number | null): string {
+  if (!value) return 'Last updated: --';
+  const date = new Date(value);
+  return `Last updated: ${date.toLocaleString()}`;
+}
+
+function updatePricesLastUpdated(): void {
+  const el = document.getElementById('pricesLastUpdated');
+  if (!el) return;
+  const { lastUpdated } = webAPI.getPriceCacheStatus();
+  el.textContent = formatLastUpdated(lastUpdated);
+}
 
 /**
  * Calculate trend based on real price history when available.
@@ -167,6 +180,13 @@ function formatPrice(price: number): string {
   return price.toFixed(2);
 }
 
+function formatUpdatedAt(timestamp: number): string {
+  if (!timestamp || Number.isNaN(timestamp)) {
+    return '--';
+  }
+  return new Date(timestamp).toLocaleString();
+}
+
 /**
  * Render a single price row
  */
@@ -194,6 +214,9 @@ function renderPriceRow(item: PriceItem, index: number): string {
           <img src="${iconPath}" alt="${item.name}" class="prices-item-icon" onerror="this.style.display='none'">
           <span class="prices-item-name">${escapeHtml(item.name)}</span>
         </div>
+      </td>
+      <td class="prices-col-updated">
+        <span class="prices-updated-at">${formatUpdatedAt(item.timestamp)}</span>
       </td>
       <td class="prices-col-price">
         <span class="prices-price-value ${priceClass}">${priceFormatted}</span>
@@ -348,6 +371,8 @@ export async function loadPrices(): Promise<void> {
     allPriceItems = allItems;
     applyFilters();
     renderPrices();
+    updatePricesLastUpdated();
+    setInterval(updatePricesLastUpdated, 60 * 1000);
   } catch (error) {
     console.error('Failed to load prices:', error);
   }

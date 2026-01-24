@@ -2826,6 +2826,26 @@ body.overlay-widget {
   margin-bottom: calc(16px * var(--scale));
 }
 
+.prices-last-updated {
+  font-size: calc(var(--text-small) * var(--text-scale));
+  color: var(--border);
+  white-space: nowrap;
+}
+
+.prices-col-updated {
+  width: calc(180px * var(--scale));
+  text-align: center;
+  padding-right: calc(64px * var(--scale)) !important;
+  cursor: default !important;
+}
+
+.prices-updated-at {
+  font-size: calc(var(--text-small) * var(--text-scale));
+  color: var(--border);
+  white-space: nowrap;
+  margin-left: -32px; /* stupid, but works */
+}
+
 .prices-search-container {
   display: flex;
   align-items: center;

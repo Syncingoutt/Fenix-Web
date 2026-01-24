@@ -131,6 +131,7 @@ export class PriceSyncService {
   private initializing: Promise<boolean> | null = null;
   private lastSyncCursorMs: number | null = null;
   private cacheUnsub: (() => void) | null = null;
+  private lastCacheUpdatedAt: number | null = null;
 
   getSyncStatus(): { enabled: boolean; consent: SyncConsent } {
     if (!this.config) {
@@ -232,6 +233,7 @@ export class PriceSyncService {
 
       const cacheData = snapshot.exists() ? snapshot.data() as Record<string, unknown> : null;
       const lastUpdated = typeof cacheData?.lastUpdated === 'number' ? cacheData.lastUpdated : 0;
+      this.lastCacheUpdatedAt = lastUpdated || null;
       const prices = (cacheData?.prices && typeof cacheData.prices === 'object') ? cacheData.prices as PriceCache : {};
 
       if (!options?.forceFull && lastUpdated && now - lastUpdated < PRICE_CACHE_TTL_MS) {
@@ -257,8 +259,10 @@ export class PriceSyncService {
       if (!snapshot.exists()) return;
       const data = snapshot.data() as Record<string, unknown>;
       const prices = (data?.prices && typeof data.prices === 'object') ? data.prices as PriceCache : {};
+      const lastUpdated = typeof data?.lastUpdated === 'number' ? data.lastUpdated : null;
       this.lastSyncCache = prices;
       this.lastSyncAt = Date.now();
+      this.lastCacheUpdatedAt = lastUpdated;
     });
   }
 
@@ -266,6 +270,7 @@ export class PriceSyncService {
     if (!this.db) return this.lastSyncCache;
 
     const lastUpdated = typeof cacheData?.lastUpdated === 'number' ? cacheData.lastUpdated : 0;
+    this.lastCacheUpdatedAt = lastUpdated || null;
     if (lastUpdated && now - lastUpdated < PRICE_CACHE_TTL_MS) {
       return (cacheData?.prices && typeof cacheData.prices === 'object') ? cacheData.prices as PriceCache : {};
     }
@@ -283,8 +288,13 @@ export class PriceSyncService {
       isUpdating: false,
       lockExpiresAt: 0
     }, { merge: true });
+    this.lastCacheUpdatedAt = now;
 
     return prices;
+  }
+
+  getCacheStatus(): { lastUpdated: number | null } {
+    return { lastUpdated: this.lastCacheUpdatedAt };
   }
 
   private async tryAcquireLock(now: number): Promise<{ acquired: boolean }> {
