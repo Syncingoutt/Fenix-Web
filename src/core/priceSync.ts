@@ -37,7 +37,7 @@ const DEFAULT_CONFIG: CloudSyncConfig = {
   }
 };
 
-const SYNC_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const SYNC_CACHE_TTL_MS = 20 * 60 * 1000; // 20 minutes
 // Snapshot schema:
 // pricesSnapshots/{leagueId} -> { data: { [baseId]: { price, timestamp, listingCount? } }, lastUpdated: Timestamp }
 const DEFAULT_LEAGUE_ID = 's11-vorax';
@@ -164,6 +164,7 @@ export class PriceSyncService {
   private snapshotUnsub: (() => void) | null = null;
   private lastCacheUpdatedAt: number | null = null;
   private lastCacheError: string | null = null;
+  private onPriceUpdateCallback: ((cache: PriceCache) => void) | null = null;
 
   getSyncStatus(): { enabled: boolean; consent: SyncConsent } {
     if (!this.config) {
@@ -347,6 +348,11 @@ export class PriceSyncService {
         saveLastSyncAt(this.lastSyncAt);
         this.lastCacheUpdatedAt = lastUpdatedAt;
         this.lastCacheError = null;
+        
+        // Notify callback if registered (for real-time updates)
+        if (this.onPriceUpdateCallback) {
+          this.onPriceUpdateCallback(pricesWithHistory);
+        }
       },
       (error) => {
         console.error('Failed to subscribe to price snapshot:', error);
@@ -357,5 +363,9 @@ export class PriceSyncService {
 
   getCacheStatus(): { lastUpdated: number | null; lastError: string | null } {
     return { lastUpdated: this.lastCacheUpdatedAt, lastError: this.lastCacheError };
+  }
+
+  onPriceUpdate(callback: (cache: PriceCache) => void): void {
+    this.onPriceUpdateCallback = callback;
   }
 }

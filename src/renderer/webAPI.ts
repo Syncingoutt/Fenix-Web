@@ -30,6 +30,15 @@ export async function initializeWebAPI(): Promise<void> {
   priceSyncService = new PriceSyncService();
   await priceSyncService.setSyncEnabled(true);
   
+  // Register callback for real-time price updates from onSnapshot
+  priceSyncService.onPriceUpdate(async (cache) => {
+    if (inventoryManager) {
+      inventoryManager.applyPriceCache(cache);
+      await savePriceCache(inventoryManager.getPriceCacheAsObject());
+      notifyInventoryUpdate();
+    }
+  });
+  
   // Load price cache
   const priceCache = await loadPriceCache((options) =>
     priceSyncService ? priceSyncService.syncPrices(options) : Promise.resolve({})
@@ -52,17 +61,18 @@ export async function initializeWebAPI(): Promise<void> {
     }
   }
   
-  // Start price sync interval (every 30 minutes)
+  // Start price sync interval (every 20 minutes)
+  // Use forceFull to bypass cache and always fetch fresh snapshot
   setInterval(async () => {
     if (priceSyncService) {
-      const cloudCache = await priceSyncService.syncPrices();
+      const cloudCache = await priceSyncService.syncPrices({ forceFull: true });
       if (inventoryManager) {
         inventoryManager.applyPriceCache(cloudCache);
         await savePriceCache(inventoryManager.getPriceCacheAsObject());
         notifyInventoryUpdate();
       }
     }
-  }, 30 * 60 * 1000); // 30 minutes
+  }, 20 * 60 * 1000); // 20 minutes
   
   // Start realtime timer
   startRealtimeTimer();
