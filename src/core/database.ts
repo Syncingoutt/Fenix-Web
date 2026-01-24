@@ -132,7 +132,11 @@ export async function loadPriceCache(
     try {
       const forceFull = Object.keys(localCache).length === 0;
       const cloudCache = await cloudCacheProvider({ forceFull });
-      return mergePriceCaches(localCache, cloudCache);
+      const mergedCache = mergePriceCaches(localCache, cloudCache);
+      if (Object.keys(cloudCache).length > 0) {
+        await savePriceCache(mergedCache);
+      }
+      return mergedCache;
     } catch (error) {
       console.error('Failed to load cloud price cache:', error);
       return localCache;

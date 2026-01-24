@@ -1,7 +1,7 @@
 import { initializeApp, FirebaseApp } from 'firebase/app';
 import { getAuth, signInAnonymously, Auth } from 'firebase/auth';
-import { getFirestore, Firestore, Timestamp, doc, getDoc, onSnapshot } from 'firebase/firestore';
-import { PriceCache, PriceCacheEntry } from './database';
+import { getFirestore, Firestore, Timestamp, collection, getDocs } from 'firebase/firestore';
+import { PriceCache, loadPriceCache } from './database';
 
 type SyncConsent = 'pending' | 'granted' | 'denied';
 
@@ -37,8 +37,36 @@ const DEFAULT_CONFIG: CloudSyncConfig = {
 };
 
 const SYNC_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
-const PRICE_CACHE_DOC_PATH = 'meta/priceCache';
-const PRICE_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const PRICE_COLLECTION_PATH = 'prices';
+const PRICE_LAST_SYNC_KEY = 'fenix_price_last_sync_at';
+
+function parseTimestamp(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (value instanceof Timestamp) {
+    return value.toMillis();
+  }
+  return null;
+}
+
+function loadLastSyncAt(): number {
+  try {
+    const stored = localStorage.getItem(PRICE_LAST_SYNC_KEY);
+    const parsed = stored ? Number(stored) : 0;
+    return Number.isFinite(parsed) ? parsed : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function saveLastSyncAt(value: number): void {
+  try {
+    localStorage.setItem(PRICE_LAST_SYNC_KEY, String(value));
+  } catch (error) {
+    console.error('Failed to persist price sync timestamp:', error);
+  }
+}
 
 function loadCloudSyncConfig(): CloudSyncConfig {
   try {
@@ -129,7 +157,6 @@ export class PriceSyncService {
   private lastSyncCache: PriceCache = {};
   private initializing: Promise<boolean> | null = null;
   private lastSyncCursorMs: number | null = null;
-  private cacheUnsub: (() => void) | null = null;
   private lastCacheUpdatedAt: number | null = null;
   private lastCacheError: string | null = null;
 
@@ -209,7 +236,6 @@ export class PriceSyncService {
       }
     }
 
-    this.subscribeToCache();
     return true;
   }
 
@@ -223,68 +249,63 @@ export class PriceSyncService {
     }
 
     const now = Date.now();
-    if (!options?.forceFull && now - this.lastSyncAt < SYNC_CACHE_TTL_MS) {
+    if (!this.lastSyncAt) {
+      this.lastSyncAt = loadLastSyncAt();
+    }
+
+    if (Object.keys(this.lastSyncCache).length === 0) {
+      this.lastSyncCache = await loadPriceCache();
+      if (Object.keys(this.lastSyncCache).length > 0) {
+        const lastUpdated = Object.values(this.lastSyncCache)
+          .map(entry => entry.timestamp)
+          .filter(value => typeof value === 'number' && Number.isFinite(value))
+          .reduce((max, value) => Math.max(max, value), 0);
+        this.lastCacheUpdatedAt = lastUpdated || this.lastCacheUpdatedAt;
+      }
+    }
+
+    if (!options?.forceFull && this.lastSyncAt && now - this.lastSyncAt < SYNC_CACHE_TTL_MS) {
       return this.lastSyncCache;
     }
 
     try {
-      const cacheRef = doc(this.db, PRICE_CACHE_DOC_PATH);
-      const snapshot = await getDoc(cacheRef);
+      const snapshot = await getDocs(collection(this.db, PRICE_COLLECTION_PATH));
+      const prices: PriceCache = {};
+      let lastUpdatedAt: number | null = null;
 
-      const cacheData = snapshot.exists() ? snapshot.data() as Record<string, unknown> : null;
-      const lastUpdatedRaw = cacheData?.lastUpdated;
-      const lastUpdated = typeof lastUpdatedRaw === 'number'
-        ? lastUpdatedRaw
-        : lastUpdatedRaw instanceof Timestamp
-          ? lastUpdatedRaw.toMillis()
-          : 0;
-      this.lastCacheUpdatedAt = lastUpdated || null;
-      this.lastCacheError = null;
-      const prices = (cacheData?.prices && typeof cacheData.prices === 'object') ? cacheData.prices as PriceCache : {};
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data() as Record<string, unknown>;
+        const price = typeof data.price === 'number' ? data.price : null;
+        const timestamp = parseTimestamp(data.timestamp);
 
-      if (!options?.forceFull && lastUpdated && now - lastUpdated < PRICE_CACHE_TTL_MS) {
-        this.lastSyncAt = now;
-        this.lastSyncCache = prices;
-        return prices;
-      }
+        if (price === null || timestamp === null) {
+          return;
+        }
 
-      // Web client is read-only. If cache is stale, return cached data and
-      // let server-side or desktop app refresh it.
+        const listingCount = typeof data.listingCount === 'number' ? data.listingCount : undefined;
+        prices[docSnap.id] = {
+          price,
+          timestamp,
+          ...(listingCount !== undefined ? { listingCount } : {})
+        };
+
+        const updatedAt = parseTimestamp(data.updatedAt) ?? timestamp;
+        if (updatedAt && (!lastUpdatedAt || updatedAt > lastUpdatedAt)) {
+          lastUpdatedAt = updatedAt;
+        }
+      });
+
       this.lastSyncAt = now;
+      saveLastSyncAt(now);
       this.lastSyncCache = prices;
+      this.lastCacheUpdatedAt = lastUpdatedAt;
+      this.lastCacheError = null;
       return prices;
     } catch (error) {
-      console.error('Failed to sync prices from cache:', error);
-      this.lastCacheError = 'Failed to read price cache';
+      console.error('Failed to sync prices from Firestore:', error);
+      this.lastCacheError = 'Failed to read prices';
       return this.lastSyncCache;
     }
-  }
-
-  private subscribeToCache(): void {
-    if (!this.db || this.cacheUnsub) return;
-    const cacheRef = doc(this.db, PRICE_CACHE_DOC_PATH);
-    this.cacheUnsub = onSnapshot(
-      cacheRef,
-      (snapshot) => {
-        if (!snapshot.exists()) return;
-        const data = snapshot.data() as Record<string, unknown>;
-        const prices = (data?.prices && typeof data.prices === 'object') ? data.prices as PriceCache : {};
-        const lastUpdatedRaw = data?.lastUpdated;
-        const lastUpdated = typeof lastUpdatedRaw === 'number'
-          ? lastUpdatedRaw
-          : lastUpdatedRaw instanceof Timestamp
-            ? lastUpdatedRaw.toMillis()
-            : null;
-        this.lastSyncCache = prices;
-        this.lastSyncAt = Date.now();
-        this.lastCacheUpdatedAt = lastUpdated;
-        this.lastCacheError = null;
-      },
-      (error) => {
-        console.error('Failed to subscribe to price cache:', error);
-        this.lastCacheError = 'Failed to subscribe to price cache';
-      }
-    );
   }
 
   getCacheStatus(): { lastUpdated: number | null; lastError: string | null } {

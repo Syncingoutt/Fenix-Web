@@ -52,7 +52,7 @@ export async function initializeWebAPI(): Promise<void> {
     }
   }
   
-  // Start price sync interval (every hour)
+  // Start price sync interval (every 30 minutes)
   setInterval(async () => {
     if (priceSyncService) {
       const cloudCache = await priceSyncService.syncPrices();
@@ -69,7 +69,7 @@ export async function initializeWebAPI(): Promise<void> {
         notifyInventoryUpdate();
       }
     }
-  }, 60 * 60 * 1000); // 1 hour
+  }, 30 * 60 * 1000); // 30 minutes
   
   // Start realtime timer
   startRealtimeTimer();
