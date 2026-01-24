@@ -1,7 +1,7 @@
 // Settings state management
 
 // Tax preference
-let includeTax: boolean = false;
+let includeTax: boolean = true;
 
 export function getIncludeTax(): boolean {
   return includeTax;

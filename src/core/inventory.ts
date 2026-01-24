@@ -72,6 +72,13 @@ export class InventoryManager {
     return this.inventory;
   }
 
+  hydrateInventory(items: InventoryItem[]): void {
+    this.inventory.clear();
+    for (const item of items) {
+      this.inventory.set(item.baseId, { ...item });
+    }
+  }
+
   updatePrice(baseId: string, price: number, listingCount?: number, timestamp: number = Date.now()): void {
 
     // Build or update per-6-hour history (last 7 days = 28 points)

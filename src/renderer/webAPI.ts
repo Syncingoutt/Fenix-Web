@@ -19,6 +19,7 @@ let hourlyActive = false;
 let hourlyPaused = false;
 let timerCallbacks: Array<(data: { type: string; seconds: number }) => void> = [];
 let inventoryUpdateCallbacks: Array<() => void> = [];
+const INVENTORY_CACHE_KEY = 'fenix_inventory_cache';
 
 // Initialize services
 export async function initializeWebAPI(): Promise<void> {
@@ -27,14 +28,29 @@ export async function initializeWebAPI(): Promise<void> {
   
   // Initialize price sync service
   priceSyncService = new PriceSyncService();
+  await priceSyncService.setSyncEnabled(true);
   
   // Load price cache
-  const priceCache = await loadPriceCache((options) => 
+  const priceCache = await loadPriceCache((options) =>
     priceSyncService ? priceSyncService.syncPrices(options) : Promise.resolve({})
   );
   
   // Initialize inventory manager
   inventoryManager = new InventoryManager(itemDatabase, priceCache);
+
+  // Restore cached inventory (if any)
+  const cached = localStorage.getItem(INVENTORY_CACHE_KEY);
+  if (cached && inventoryManager) {
+    try {
+      const parsed = JSON.parse(cached) as InventoryItem[];
+      if (Array.isArray(parsed)) {
+        inventoryManager.hydrateInventory(parsed);
+        notifyInventoryUpdate();
+      }
+    } catch (error) {
+      console.warn('Failed to restore cached inventory:', error);
+    }
+  }
   
   // Start price sync interval (every hour)
   setInterval(async () => {
@@ -302,7 +318,18 @@ export async function handleLogFileUpload(file: File): Promise<void> {
         
         if (inventoryManager) {
           inventoryManager.buildInventory(logEntries);
+
+          // Fetch latest prices after upload so user doesn't need refresh
+          if (priceSyncService) {
+            const cloudCache = await priceSyncService.syncPrices({ forceFull: true });
+            for (const [baseId, cloudEntry] of Object.entries(cloudCache)) {
+              inventoryManager.updatePrice(baseId, cloudEntry.price, cloudEntry.listingCount, cloudEntry.timestamp);
+            }
+          }
+
           await savePriceCache(inventoryManager.getPriceCacheAsObject());
+          // Persist inventory for refresh restore
+          localStorage.setItem(INVENTORY_CACHE_KEY, JSON.stringify(inventoryManager.getInventory()));
           localStorage.setItem('fenix_log_uploaded', 'true');
           notifyInventoryUpdate();
           resolve();

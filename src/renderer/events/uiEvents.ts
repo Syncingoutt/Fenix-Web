@@ -10,6 +10,22 @@ export function initUIEvents(
 ): void {
   closeSettingsModal = settingsModalCloseFn;
   
+  // CTA close handler (persist dismissal for this browser)
+  const ctaBanner = document.getElementById('ctaBanner');
+  const ctaCloseBtn = document.getElementById('ctaCloseBtn');
+  if (ctaBanner) {
+    const dismissed = localStorage.getItem('fenix_cta_dismissed') === 'true';
+    if (!dismissed) {
+      ctaBanner.classList.remove('is-hidden');
+    }
+  }
+  if (ctaBanner && ctaCloseBtn) {
+    ctaCloseBtn.addEventListener('click', () => {
+      ctaBanner.classList.add('is-hidden');
+      localStorage.setItem('fenix_cta_dismissed', 'true');
+    });
+  }
+
   // File upload button handler
   const uploadLogBtn = document.getElementById('uploadLogBtn') as HTMLButtonElement | null;
   if (uploadLogBtn) {

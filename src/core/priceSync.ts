@@ -1,6 +1,6 @@
 import { initializeApp, FirebaseApp } from 'firebase/app';
 import { getAuth, signInAnonymously, Auth } from 'firebase/auth';
-import { getFirestore, Firestore, collection, getDocs, Timestamp, query, where, orderBy, startAfter, limit, QueryConstraint } from 'firebase/firestore';
+import { getFirestore, Firestore, collection, getDocs, Timestamp, query, where, orderBy, startAfter, limit, QueryConstraint, doc, getDoc, setDoc, runTransaction, onSnapshot } from 'firebase/firestore';
 import { PriceCache, PriceCacheEntry } from './database';
 
 type SyncConsent = 'pending' | 'granted' | 'denied';
@@ -29,14 +29,17 @@ const DEFAULT_FIREBASE_CONFIG = {
   storageBucket: 'fenix-2c341.firebasestorage.app'
 };
 const DEFAULT_CONFIG: CloudSyncConfig = {
-  enabled: false,
-  syncConsent: 'pending',
+  enabled: true,
+  syncConsent: 'granted',
   firebase: {
     ...DEFAULT_FIREBASE_CONFIG
   }
 };
 
-const SYNC_CACHE_TTL_MS = 5000;
+const SYNC_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+const PRICE_CACHE_DOC_PATH = 'meta/priceCache';
+const PRICE_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+const LOCK_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 function loadCloudSyncConfig(): CloudSyncConfig {
   try {
@@ -127,6 +130,7 @@ export class PriceSyncService {
   private lastSyncCache: PriceCache = {};
   private initializing: Promise<boolean> | null = null;
   private lastSyncCursorMs: number | null = null;
+  private cacheUnsub: (() => void) | null = null;
 
   getSyncStatus(): { enabled: boolean; consent: SyncConsent } {
     if (!this.config) {
@@ -204,6 +208,7 @@ export class PriceSyncService {
       }
     }
 
+    this.subscribeToCache();
     return true;
   }
 
@@ -222,99 +227,113 @@ export class PriceSyncService {
     }
 
     try {
-      const cache: PriceCache = {};
-      const cursorMs = this.lastSyncCursorMs ?? 0;
-      const useIncremental = !options?.forceFull && cursorMs > 0;
-      let maxUpdatedAtMs = useIncremental ? cursorMs : 0;
-      
-      if (useIncremental) {
-        let lastDoc: unknown | null = null;
-        let batchSize = 0;
-        do {
-          const constraints: QueryConstraint[] = [
-            where('updatedAt', '>', Timestamp.fromMillis(cursorMs)),
-            orderBy('updatedAt'),
-            limit(500)
-          ];
-          if (lastDoc) {
-            constraints.push(startAfter(lastDoc as any));
-          }
+      const cacheRef = doc(this.db, PRICE_CACHE_DOC_PATH);
+      const snapshot = await getDoc(cacheRef);
 
-          const snapshot = await getDocs(query(collection(this.db, 'prices'), ...constraints));
-          batchSize = snapshot.size;
-          if (batchSize === 0) break;
+      const cacheData = snapshot.exists() ? snapshot.data() as Record<string, unknown> : null;
+      const lastUpdated = typeof cacheData?.lastUpdated === 'number' ? cacheData.lastUpdated : 0;
+      const prices = (cacheData?.prices && typeof cacheData.prices === 'object') ? cacheData.prices as PriceCache : {};
 
-          snapshot.forEach(docSnap => {
-            const data = docSnap.data() as Record<string, unknown>;
-            const price = typeof data.price === 'number' ? data.price : null;
-            const timestamp = typeof data.timestamp === 'number' ? data.timestamp : null;
-            if (price === null || timestamp === null) return;
-            const listingCount = typeof data.listingCount === 'number' ? data.listingCount : undefined;
-
-            cache[docSnap.id] = {
-              price,
-              timestamp,
-              ...(listingCount !== undefined && { listingCount })
-            };
-
-            const updatedAt = data.updatedAt;
-            if (updatedAt instanceof Timestamp) {
-              const updatedAtMs = updatedAt.toMillis();
-              if (updatedAtMs > maxUpdatedAtMs) {
-                maxUpdatedAtMs = updatedAtMs;
-              }
-            }
-          });
-
-          lastDoc = snapshot.docs[snapshot.docs.length - 1] ?? null;
-        } while (batchSize === 500);
-      } else {
-        const snapshot = await getDocs(collection(this.db, 'prices'));
-        snapshot.forEach(docSnap => {
-          const data = docSnap.data() as Record<string, unknown>;
-          const price = typeof data.price === 'number' ? data.price : null;
-          const timestamp = typeof data.timestamp === 'number' ? data.timestamp : null;
-          if (price === null || timestamp === null) return;
-          const listingCount = typeof data.listingCount === 'number' ? data.listingCount : undefined;
-
-          cache[docSnap.id] = {
-            price,
-            timestamp,
-            ...(listingCount !== undefined && { listingCount })
-          };
-
-          const updatedAt = data.updatedAt;
-          if (updatedAt instanceof Timestamp) {
-            const updatedAtMs = updatedAt.toMillis();
-            if (updatedAtMs > maxUpdatedAtMs) {
-              maxUpdatedAtMs = updatedAtMs;
-            }
-          }
-        });
+      if (!options?.forceFull && lastUpdated && now - lastUpdated < PRICE_CACHE_TTL_MS) {
+        this.lastSyncAt = now;
+        this.lastSyncCache = prices;
+        return prices;
       }
 
-      if (maxUpdatedAtMs && maxUpdatedAtMs !== this.lastSyncCursorMs) {
-        this.lastSyncCursorMs = maxUpdatedAtMs;
-        if (this.config) {
-          this.config.lastSyncCursorMs = maxUpdatedAtMs;
-          saveCloudSyncConfig(this.config);
-        }
-      } else if (!this.lastSyncCursorMs || this.lastSyncCursorMs === 0) {
-        // Fallback to avoid repeated full syncs if updatedAt is missing
-        const fallbackCursor = Date.now() - 5 * 60 * 1000;
-        this.lastSyncCursorMs = fallbackCursor;
-        if (this.config) {
-          this.config.lastSyncCursorMs = fallbackCursor;
-          saveCloudSyncConfig(this.config);
-        }
-      }
-
+      const refreshed = await this.refreshCacheIfNeeded(cacheData, now);
       this.lastSyncAt = now;
-      this.lastSyncCache = cache;
-      return cache;
+      this.lastSyncCache = refreshed;
+      return refreshed;
     } catch (error) {
-      console.error('Failed to sync prices from cloud:', error);
-      return {};
+      console.error('Failed to sync prices from cache:', error);
+      return this.lastSyncCache;
     }
+  }
+
+  private subscribeToCache(): void {
+    if (!this.db || this.cacheUnsub) return;
+    const cacheRef = doc(this.db, PRICE_CACHE_DOC_PATH);
+    this.cacheUnsub = onSnapshot(cacheRef, (snapshot) => {
+      if (!snapshot.exists()) return;
+      const data = snapshot.data() as Record<string, unknown>;
+      const prices = (data?.prices && typeof data.prices === 'object') ? data.prices as PriceCache : {};
+      this.lastSyncCache = prices;
+      this.lastSyncAt = Date.now();
+    });
+  }
+
+  private async refreshCacheIfNeeded(cacheData: Record<string, unknown> | null, now: number): Promise<PriceCache> {
+    if (!this.db) return this.lastSyncCache;
+
+    const lastUpdated = typeof cacheData?.lastUpdated === 'number' ? cacheData.lastUpdated : 0;
+    if (lastUpdated && now - lastUpdated < PRICE_CACHE_TTL_MS) {
+      return (cacheData?.prices && typeof cacheData.prices === 'object') ? cacheData.prices as PriceCache : {};
+    }
+
+    const lock = await this.tryAcquireLock(now);
+    if (!lock.acquired) {
+      return (cacheData?.prices && typeof cacheData.prices === 'object') ? cacheData.prices as PriceCache : this.lastSyncCache;
+    }
+
+    const prices = await this.fetchAllPrices();
+    const cacheRef = doc(this.db, PRICE_CACHE_DOC_PATH);
+    await setDoc(cacheRef, {
+      lastUpdated: now,
+      prices,
+      isUpdating: false,
+      lockExpiresAt: 0
+    }, { merge: true });
+
+    return prices;
+  }
+
+  private async tryAcquireLock(now: number): Promise<{ acquired: boolean }> {
+    if (!this.db) return { acquired: false };
+    const cacheRef = doc(this.db, PRICE_CACHE_DOC_PATH);
+    const lockExpiresAt = now + LOCK_TTL_MS;
+
+    try {
+      const result = await runTransaction(this.db, async (tx) => {
+        const snapshot = await tx.get(cacheRef);
+        const data = snapshot.exists() ? snapshot.data() as Record<string, unknown> : {};
+        const isUpdating = Boolean(data.isUpdating);
+        const currentLock = typeof data.lockExpiresAt === 'number' ? data.lockExpiresAt : 0;
+
+        if (isUpdating && currentLock > now) {
+          return false;
+        }
+
+        tx.set(cacheRef, {
+          isUpdating: true,
+          lockExpiresAt
+        }, { merge: true });
+        return true;
+      });
+
+      return { acquired: result };
+    } catch (error) {
+      console.warn('Failed to acquire cache lock:', error);
+      return { acquired: false };
+    }
+  }
+
+  private async fetchAllPrices(): Promise<PriceCache> {
+    if (!this.db) return {};
+    const snapshot = await getDocs(collection(this.db, 'prices'));
+    const cache: PriceCache = {};
+    snapshot.forEach(docSnap => {
+      const data = docSnap.data() as Record<string, unknown>;
+      const price = typeof data.price === 'number' ? data.price : null;
+      const timestamp = typeof data.timestamp === 'number' ? data.timestamp : null;
+      if (price === null || timestamp === null) return;
+      const listingCount = typeof data.listingCount === 'number' ? data.listingCount : undefined;
+
+      cache[docSnap.id] = {
+        price,
+        timestamp,
+        ...(listingCount !== undefined && { listingCount })
+      };
+    });
+    return cache;
   }
 }

@@ -2,7 +2,8 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>Fenix</title>
+    <title>Fenix</title>
+    <link rel="icon" type="image/png" href="favicon.png">
     <link href="https://fonts.googleapis.com/css?family=Manrope" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
@@ -19,8 +20,8 @@
       updateScale();
       window.addEventListener('resize', updateScale);
     </script>
-    <script type="module" crossorigin src="./assets/main--VOtwOoA.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/main-P3Q7PCnI.css">
+    <script type="module" crossorigin src="./assets/main-Dmo4zeOb.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/main-CJs9ymW3.css">
   </head>
 
   <body>
@@ -39,14 +40,6 @@
             <div id="nav-strategies" class="nav-item">Strategies</div>
           </div>
           <div class="header-user">
-            <button id="uploadLogBtn" class="upload-log-btn" title="Upload UE_game.log">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <polyline points="17 8 12 3 7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              <span>Upload Log</span>
-            </button>
             <div id="settingsButton" class="settings-button" title="Settings">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -66,6 +59,21 @@
           </div>
         </div>
       </header>
+      
+      <section class="cta-banner is-hidden" id="ctaBanner">
+        <div class="cta-content">
+          <div class="cta-title">Want the full real-time tracking experience?</div>
+          <div class="cta-subtitle">Get the Windows app for live tracking, overlays, and the complete feature set.</div>
+        </div>
+        <a class="cta-button" href="https://github.com/Syncingoutt/Fenix/releases" target="_blank" rel="noopener noreferrer">
+          Download Windows App
+        </a>
+        <button class="cta-close" id="ctaCloseBtn" aria-label="Close CTA">
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M5 5L15 15M15 5L5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </section>
 
       <main>
         <!-- Page: Home -->
@@ -132,6 +140,14 @@
               <img src="./assets/100300-CnLPfKXq.webp" alt="FEICON"> 
               <div id="wealthValue">0</div>
             </div>
+            <button id="uploadLogBtn" class="upload-log-btn" title="Upload UE_game.log">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <polyline points="17 8 12 3 7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>Upload Log</span>
+            </button>
             <div class="subtext">Total</div>
           </div>
         </div>
@@ -376,18 +392,7 @@
             <div class="settings-section" id="generalSection">
               <div class="settings-section-title">General Settings</div>
               
-              <div class="settings-group">
-                <div class="settings-group-label">Upload Log File</div>
-                <div class="settings-group-description">Upload your UE_game.log file to track inventory</div>
-                <button id="settingsUploadLogBtn" class="settings-upload-btn">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <polyline points="17 8 12 3 7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  <span>Upload UE_game.log</span>
-                </button>
-              </div>
+              <!-- Upload Log File removed from settings -->
             </div>
             <div class="settings-section" id="preferencesSection">
               <div class="settings-section-title">Preferences</div>
@@ -401,6 +406,16 @@
                   </label>
                 </div>
               </div>
+
+            <div class="settings-group">
+              <div class="settings-option">
+                <div class="settings-option-label">Desktop App</div>
+                <div class="settings-group-description">Get the full real-time tracking experience on Windows.</div>
+                <button id="settingsDownloadDesktopBtn" class="settings-download-btn">
+                  Download Windows App
+                </button>
+              </div>
+            </div>
 
               <div class="settings-group">
                 <div class="settings-option">
@@ -443,5 +458,17 @@
       window.addEventListener('resize', updateSegmentedTransform);
       updateSegmentedTransform(); // Initialize on load
     </script>
+    
+    <footer class="site-footer">
+      <div class="footer-left">
+        <img src="assets/AppIcon.png" alt="Fenix icon" class="footer-icon">
+        <span>Fenix 2026</span>
+      </div>
+      <div class="footer-right">
+        <a href="https://github.com/Syncingoutt/Fenix-Web/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">
+          MIT License
+        </a>
+      </div>
+    </footer>
   </body>
 </html>

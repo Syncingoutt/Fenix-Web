@@ -1,6 +1,6 @@
 // Cloud sync disable confirmation modal
 
-const syncDisableConfirmModal = document.getElementById('syncDisableConfirmModal')!;
+const syncDisableConfirmModal = document.getElementById('syncDisableConfirmModal');
 const syncDisableCancelBtn = document.getElementById('syncDisableCancelBtn') as HTMLButtonElement | null;
 const syncDisableConfirmBtn = document.getElementById('syncDisableConfirmBtn') as HTMLButtonElement | null;
 
@@ -8,6 +8,9 @@ let resolvePromise: ((value: boolean) => void) | null = null;
 let currentPromise: Promise<boolean> | null = null;
 
 function showSyncDisableConfirmModal(): Promise<boolean> {
+  if (!syncDisableConfirmModal) {
+    return Promise.resolve(false);
+  }
   if (currentPromise) {
     return currentPromise;
   }
@@ -21,12 +24,18 @@ function showSyncDisableConfirmModal(): Promise<boolean> {
 }
 
 function hideSyncDisableConfirmModal(): void {
+  if (!syncDisableConfirmModal) {
+    return;
+  }
   syncDisableConfirmModal.classList.remove('active');
   currentPromise = null;
   resolvePromise = null;
 }
 
 export function initSyncDisableConfirmModal(): void {
+  if (!syncDisableConfirmModal) {
+    return;
+  }
   if (syncDisableCancelBtn) {
     syncDisableCancelBtn.addEventListener('click', () => {
       if (resolvePromise) {

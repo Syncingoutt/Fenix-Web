@@ -29,10 +29,5 @@ export function initSyncConsentModal(): void {
     });
   }
 
-  // Check sync status on load and show modal if needed
-  webAPI.getCloudSyncStatus().then(status => {
-    if (status.consent === 'pending') {
-      showSyncConsentModal();
-    }
-  });
+  webAPI.setCloudSyncEnabled(true);
 }

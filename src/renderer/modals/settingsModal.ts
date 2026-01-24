@@ -2,9 +2,7 @@
 
 import { getIncludeTax, setIncludeTax } from '../state/settingsState.js';
 import { getCurrentItems } from '../state/inventoryState.js';
-import { showSyncDisableConfirmModal } from './syncDisableConfirmModal.js';
 import { webAPI } from '../webAPI.js';
-import { handleLogFileUpload } from '../webAPI.js';
 
 let currentSettings: { includeTax?: boolean } = {};
 let pendingIncludeTax: boolean | null = null;
@@ -26,14 +24,7 @@ const includeTaxCheckbox = document.getElementById('includeTaxCheckbox') as HTML
 const cloudSyncCheckbox = document.getElementById('cloudSyncCheckbox') as HTMLInputElement | null;
 const cloudSyncHelperText = document.getElementById('cloudSyncHelperText') as HTMLElement | null;
 const settingsSidebarItems = document.querySelectorAll('.settings-sidebar-item');
-const settingsUploadLogBtn = document.getElementById('settingsUploadLogBtn') as HTMLButtonElement | null;
-
-// Create hidden file input for settings modal
-const settingsFileInput = document.createElement('input');
-settingsFileInput.type = 'file';
-settingsFileInput.accept = '.log';
-settingsFileInput.style.display = 'none';
-document.body.appendChild(settingsFileInput);
+const settingsDownloadDesktopBtn = document.getElementById('settingsDownloadDesktopBtn') as HTMLButtonElement | null;
 
 export function initSettingsModal(
   inventoryRenderer: () => void,
@@ -58,7 +49,7 @@ export function initSettingsModal(
       
       // Load current settings
       currentSettings = await webAPI.getSettings();
-      pendingIncludeTax = currentSettings.includeTax !== undefined ? currentSettings.includeTax : false;
+      pendingIncludeTax = currentSettings.includeTax !== undefined ? currentSettings.includeTax : true;
       setIncludeTax(pendingIncludeTax);
       const cloudSyncStatus = await webAPI.getCloudSyncStatus();
       currentCloudSyncEnabled = cloudSyncStatus.enabled;
@@ -122,55 +113,12 @@ export function initSettingsModal(
     });
   }
 
-  // Handle file upload in settings
-  if (settingsUploadLogBtn) {
-    settingsUploadLogBtn.addEventListener('click', () => {
-      settingsFileInput.click();
+  if (settingsDownloadDesktopBtn) {
+    settingsDownloadDesktopBtn.addEventListener('click', () => {
+      window.open('https://github.com/Syncingoutt/Fenix/releases', '_blank', 'noopener,noreferrer');
     });
   }
 
-  settingsFileInput.addEventListener('change', async (e) => {
-    const target = e.target as HTMLInputElement;
-    const file = target.files?.[0];
-    
-    if (!file) return;
-    
-    if (!file.name.toLowerCase().endsWith('.log')) {
-      alert('Please select a .log file');
-      return;
-    }
-
-    try {
-      if (settingsUploadLogBtn) {
-        settingsUploadLogBtn.disabled = true;
-        const originalText = settingsUploadLogBtn.querySelector('span')?.textContent || 'Upload UE_game.log';
-        const span = settingsUploadLogBtn.querySelector('span');
-        if (span) span.textContent = 'Uploading...';
-        
-        await handleLogFileUpload(file);
-        
-        if (span) span.textContent = originalText;
-        settingsFooterMessage.textContent = 'Log file uploaded successfully!';
-        settingsFooterMessage.classList.add('show', 'success');
-        
-        // Reload inventory
-        const loadInventory = async () => {
-          const inventory = await webAPI.getInventory();
-          updateStats(inventory);
-        };
-        await loadInventory();
-      }
-    } catch (error: any) {
-      console.error('Failed to upload log file:', error);
-      settingsFooterMessage.textContent = `Failed to upload: ${error.message || 'Unknown error'}`;
-      settingsFooterMessage.classList.add('show', 'error');
-    } finally {
-      if (settingsUploadLogBtn) {
-        settingsUploadLogBtn.disabled = false;
-      }
-      target.value = '';
-    }
-  });
 
   if (cloudSyncCheckbox) {
     cloudSyncCheckbox.addEventListener('change', () => {
@@ -211,19 +159,6 @@ export function initSettingsModal(
 
       if (pendingCloudSyncEnabled !== null && currentCloudSyncEnabled !== null) {
         if (pendingCloudSyncEnabled !== currentCloudSyncEnabled) {
-          if (!pendingCloudSyncEnabled) {
-            const confirmDisable = await showSyncDisableConfirmModal();
-            if (!confirmDisable) {
-              if (cloudSyncCheckbox) {
-                cloudSyncCheckbox.checked = currentCloudSyncEnabled;
-                pendingCloudSyncEnabled = currentCloudSyncEnabled;
-              }
-              settingsSaveBtn.disabled = false;
-              settingsSaveBtn.textContent = 'Save';
-              return;
-            }
-          }
-          
           const syncResult = await webAPI.setCloudSyncEnabled(pendingCloudSyncEnabled);
           if (!syncResult.success) {
             settingsFooterMessage.textContent = syncResult.error || 'Failed to update cloud sync';
