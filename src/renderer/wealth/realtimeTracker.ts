@@ -15,9 +15,7 @@ import {
   getWealthMode
 } from '../state/wealthState.js';
 import { formatTime } from '../utils/formatting.js';
-import { ElectronAPI } from '../types.js';
-
-declare const electronAPI: ElectronAPI;
+import { webAPI } from '../webAPI.js';
 
 // These will be set by the main renderer
 let wealthValueEl: HTMLElement;
@@ -67,8 +65,8 @@ export function resetRealtimeTracking(): void {
   // Clear realtime history graph
   setRealtimeHistory([]);
   
-  // Tell main process to reset the timer
-  electronAPI.resetRealtimeTimer();
+  // Reset the timer
+  webAPI.resetRealtimeTimer();
   
   // Update display immediately
   timerEl.textContent = formatTime(0);
@@ -104,9 +102,9 @@ export function updateRealtimeWealth(): void {
  * Initialize realtime timer from main process state
  */
 export async function initRealtimeTimer(): Promise<void> {
-  const state = await electronAPI.getTimerState();
+  const state = await webAPI.getTimerState();
   setRealtimeElapsedSeconds(state.realtimeSeconds);
   timerEl.textContent = formatTime(state.realtimeSeconds);
   
-  console.log('✅ Realtime timer initialized from main process');
+  console.log('✅ Realtime timer initialized');
 }

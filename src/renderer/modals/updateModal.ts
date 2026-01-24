@@ -1,8 +1,6 @@
-// Update modal management
+// Update modal management (web version - no-op since updates not available)
 
-import { UpdateType, ElectronAPI } from '../types.js';
-
-declare const electronAPI: ElectronAPI;
+import { UpdateType } from '../types.js';
 
 let currentUpdateType: UpdateType | null = null;
 let currentUpdateVersion: string = '';
@@ -19,39 +17,10 @@ const updateBtnPrimary = document.getElementById('updateBtnPrimary') as HTMLButt
 const updateBtnSecondary = document.getElementById('updateBtnSecondary') as HTMLButtonElement;
 
 /**
- * Show the update modal
+ * Show the update modal (no-op in web version)
  */
-export function showUpdateModal(type: UpdateType, version: string, currentVersion?: string): void {
-  currentUpdateType = type;
-  currentUpdateVersion = version;
-  
-  if (type === 'available') {
-    updateModalTitle.textContent = 'Update Available';
-    updateModalSubtitle.textContent = `Version ${version}`;
-    updateModalMessage.textContent = `A new version (${version}) is available!\n\nCurrent version: ${currentVersion || 'Unknown'}\n\nWould you like to download and install it now?`;
-    updateModalChangelog.style.display = 'block';
-    updateBtnPrimary.textContent = 'Download Now';
-    updateBtnSecondary.textContent = 'Later';
-    updateProgressContainer.style.display = 'none';
-    updateBtnPrimary.style.display = 'block';
-    updateBtnSecondary.style.display = 'block';
-    updateBtnPrimary.disabled = false;
-    updateBtnSecondary.disabled = false;
-  } else if (type === 'downloaded') {
-    updateModalTitle.textContent = 'Update Downloaded';
-    updateModalSubtitle.textContent = `Version ${version}`;
-    updateModalMessage.textContent = 'Update downloaded successfully!\n\nThe update will be installed when you restart the application.';
-    updateModalChangelog.style.display = 'none';
-    updateBtnPrimary.textContent = 'Restart Now';
-    updateBtnSecondary.textContent = 'Later';
-    updateProgressContainer.style.display = 'none';
-    updateBtnPrimary.style.display = 'block';
-    updateBtnSecondary.style.display = 'block';
-    updateBtnPrimary.disabled = false;
-    updateBtnSecondary.disabled = false;
-  }
-  
-  updateModal.classList.add('active');
+export function showUpdateModal(_type: UpdateType, _version: string, _currentVersion?: string): void {
+  // No-op in web version
 }
 
 /**
@@ -64,75 +33,29 @@ export function hideUpdateModal(): void {
 }
 
 /**
- * Show download progress
+ * Show download progress (no-op in web version)
  */
 export function showDownloadProgress(): void {
-  updateProgressContainer.style.display = 'block';
-  updateModalTitle.textContent = 'Downloading Update';
-  updateModalSubtitle.textContent = `Version ${currentUpdateVersion}`;
-  updateModalMessage.textContent = 'Please wait while the update is being downloaded...';
-  updateModalChangelog.style.display = 'none';
-  updateBtnPrimary.style.display = 'none';
-  updateBtnSecondary.style.display = 'none';
+  // No-op in web version
 }
 
 /**
- * Update download progress percentage
+ * Update download progress percentage (no-op in web version)
  */
-export function updateDownloadProgress(percent: number): void {
-  if (updateModal.classList.contains('active') && updateProgressContainer.style.display !== 'none') {
-    updateProgressFill.style.width = `${percent}%`;
-    updateProgressText.textContent = `${Math.round(percent)}%`;
-  }
+export function updateDownloadProgress(_percent: number): void {
+  // No-op in web version
 }
 
 /**
- * Transition to install prompt after download completes
+ * Transition to install prompt after download completes (no-op in web version)
  */
-export function transitionToInstallPrompt(version: string): void {
-  updateProgressContainer.style.display = 'none';
-  updateModalTitle.textContent = 'Update Downloaded';
-  updateModalSubtitle.textContent = `Version ${version}`;
-  updateModalMessage.textContent = 'Update downloaded successfully!\n\nThe update will be installed when you restart the application.';
-  updateModalChangelog.style.display = 'none';
-  updateBtnPrimary.textContent = 'Restart Now';
-  updateBtnSecondary.textContent = 'Later';
-  updateBtnPrimary.style.display = 'block';
-  updateBtnSecondary.style.display = 'block';
-  updateBtnPrimary.disabled = false;
-  updateBtnSecondary.disabled = false;
-  currentUpdateType = 'downloaded';
+export function transitionToInstallPrompt(_version: string): void {
+  // No-op in web version
 }
 
 /**
- * Initialize update modal event listeners
+ * Initialize update modal event listeners (no-op in web version)
  */
 export function initUpdateModal(): void {
-  // Button event listeners
-  updateBtnPrimary.addEventListener('click', () => {
-    if (currentUpdateType === 'available') {
-      // Start download
-      electronAPI.sendUpdateDialogResponse('download');
-      showDownloadProgress();
-    } else if (currentUpdateType === 'downloaded') {
-      // Restart now
-      electronAPI.sendUpdateDialogResponse('restart');
-      hideUpdateModal();
-    }
-  });
-
-  updateBtnSecondary.addEventListener('click', () => {
-    electronAPI.sendUpdateDialogResponse('later');
-    hideUpdateModal();
-  });
-
-  // Listen for update dialog requests from main process
-  electronAPI.onShowUpdateDialog((data) => {
-    showUpdateModal(data.type, data.version, data.currentVersion);
-  });
-
-  // Listen for seamless transition from download to install prompt
-  electronAPI.onUpdateDownloadedTransition((data) => {
-    transitionToInstallPrompt(data.version);
-  });
+  // No-op in web version - updates not available
 }

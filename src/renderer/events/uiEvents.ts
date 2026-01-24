@@ -1,19 +1,7 @@
-// UI event handlers (title bar, etc.)
+// UI event handlers (web version)
 
-import { ElectronAPI } from '../types.js';
-import { customTitleBar, titleBarMinimize, titleBarMaximize, titleBarClose } from '../dom/domElements.js';
-
-declare const electronAPI: ElectronAPI;
-
-const maximizeIcon = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="0.75" y="0.75" width="10.5" height="10.5" stroke="#808080" stroke-width="1.5" fill="none"/>
-</svg>`;
-
-const restoreIcon = `<svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="0.75" y="4.27686" width="11.9316" height="11.9737" stroke="#808080" stroke-width="1.5"/>
-  <rect x="0.752037" y="0.747944" width="11.1078" height="11.1156" transform="matrix(0.999996 -0.00273721 0.00272013 0.999996 3.99797 0.0367292)" stroke="#808080" stroke-width="1.5"/>
-  <rect x="1.25977" y="4.79004" width="10.91" height="10.9474" fill="#272727"/>
-</svg>`;
+import { webAPI } from '../webAPI.js';
+import { handleLogFileUpload } from '../webAPI.js';
 
 let closeSettingsModal: () => void;
 
@@ -22,60 +10,48 @@ export function initUIEvents(
 ): void {
   closeSettingsModal = settingsModalCloseFn;
   
-  // Function to update title bar visibility
-  function updateTitleBarVisibility(fullscreenMode: boolean): void {
-    if (fullscreenMode) {
-      customTitleBar.style.display = 'none';
-      document.body.classList.remove('has-title-bar');
-    } else {
-      customTitleBar.style.display = 'flex';
-      document.body.classList.add('has-title-bar');
-    }
+  // File upload button handler
+  const uploadLogBtn = document.getElementById('uploadLogBtn');
+  if (uploadLogBtn) {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.log';
+    fileInput.style.display = 'none';
+    document.body.appendChild(fileInput);
+
+    uploadLogBtn.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', async (e) => {
+      const target = e.target as HTMLInputElement;
+      const file = target.files?.[0];
+      
+      if (!file) return;
+      
+      if (!file.name.toLowerCase().endsWith('.log')) {
+        alert('Please select a .log file');
+        return;
+      }
+
+      try {
+        uploadLogBtn.disabled = true;
+        const span = uploadLogBtn.querySelector('span');
+        if (span) span.textContent = 'Uploading...';
+        
+        await handleLogFileUpload(file);
+        
+        if (span) span.textContent = 'Upload Log';
+        // Reload inventory will be triggered by webAPI
+      } catch (error: any) {
+        console.error('Failed to upload log file:', error);
+        alert(`Failed to upload: ${error.message || 'Unknown error'}`);
+      } finally {
+        uploadLogBtn.disabled = false;
+        target.value = '';
+      }
+    });
   }
-  
-  // Listen for window mode changes
-  electronAPI.onWindowModeChanged((data) => {
-    updateTitleBarVisibility(data.fullscreenMode);
-  });
-  
-  // Initialize title bar visibility on load
-  electronAPI.getSettings().then(settings => {
-    updateTitleBarVisibility(settings.fullscreenMode === true);
-  });
-  
-  // Title bar button handlers
-  titleBarMinimize.addEventListener('click', () => {
-    electronAPI.minimizeWindow();
-  });
-  
-  titleBarMaximize.addEventListener('click', () => {
-    electronAPI.maximizeWindow();
-  });
-  
-  titleBarClose.addEventListener('click', () => {
-    electronAPI.closeWindow();
-  });
-  
-  // Update maximize button icon based on window state
-  function updateMaximizeIcon(isMaximized: boolean): void {
-    titleBarMaximize.innerHTML = isMaximized ? restoreIcon : maximizeIcon;
-    titleBarMaximize.title = isMaximized ? 'Restore' : 'Maximize';
-  }
-  
-  // Listen for maximize state changes
-  electronAPI.onMaximizeStateChanged((isMaximized) => {
-    updateMaximizeIcon(isMaximized);
-  });
-  
-  // Initialize maximize button icon on load
-  electronAPI.getMaximizeState().then((isMaximized) => {
-    updateMaximizeIcon(isMaximized);
-  });
-  
-  // Listen for close settings modal request (when window mode changes)
-  electronAPI.onCloseSettingsModal(() => {
-    closeSettingsModal();
-  });
   
   // SPA Navigation handlers
   const navItems = document.querySelectorAll('.nav-item');

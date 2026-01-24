@@ -1,6 +1,3 @@
-import * as fs from 'fs';
-import * as path from 'path';
-
 export interface ParsedLogEntry {
   timestamp: string;
   action: string;
@@ -11,110 +8,47 @@ export interface ParsedLogEntry {
   pageId: number | null;
 }
 
-// Default path (will be overridden by user selection)
-const DEFAULT_LOG_PATH = '';
-
-// Store userData path (set by main process)
-let userDataPath: string | null = null;
+const CONFIG_KEY = 'fenix_config';
 
 /**
- * Initialize the log parser with userData path (called from main process)
- */
-export function initLogParser(userData: string): void {
-  userDataPath = userData;
-}
-
-/**
- * Get the path to the config file where we store the log path
- */
-function getConfigPath(): string {
-  if (!userDataPath) {
-    throw new Error('Log parser not initialized. Call initLogParser() first.');
-  }
-  return path.join(userDataPath, 'config.json');
-}
-
-/**
- * Load the saved log path from config file
- */
-export function getLogPath(): string {
-  const configPath = getConfigPath();
-  
-  if (fs.existsSync(configPath)) {
-    try {
-      const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-      if (config.logPath && fs.existsSync(config.logPath)) {
-        return config.logPath;
-      }
-    } catch (error) {
-      console.warn('Failed to read config file:', error);
-    }
-  }
-  
-  return DEFAULT_LOG_PATH;
-}
-
-/**
- * Load the entire config file
+ * Load the entire config from localStorage
  */
 function loadConfig(): any {
-  const configPath = getConfigPath();
-  
-  if (fs.existsSync(configPath)) {
-    try {
-      return JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-    } catch (error) {
-      console.warn('Failed to read config file:', error);
-      return {};
+  try {
+    const stored = localStorage.getItem(CONFIG_KEY);
+    if (stored) {
+      return JSON.parse(stored);
     }
+  } catch (error) {
+    console.warn('Failed to read config from localStorage:', error);
   }
-  
   return {};
 }
 
 /**
- * Save the entire config file
+ * Save the entire config to localStorage
  */
 function saveConfig(config: any): void {
-  const configPath = getConfigPath();
-  
   try {
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
   } catch (error) {
-    console.error('Failed to save config file:', error);
+    console.error('Failed to save config to localStorage:', error);
     throw error;
   }
 }
 
 /**
- * Save the log path to config file (preserves other settings)
+ * Get settings from localStorage
  */
-export function setLogPath(logPath: string): void {
-  const config = loadConfig();
-  config.logPath = logPath;
-  saveConfig(config);
-}
-
-/**
- * Check if log path is configured
- */
-export function isLogPathConfigured(): boolean {
-  const logPath = getLogPath();
-  return logPath !== DEFAULT_LOG_PATH && logPath !== '' && fs.existsSync(logPath);
-}
-
-/**
- * Get settings from config file
- */
-export function getSettings(): { keybind?: string; fullscreenMode?: boolean; includeTax?: boolean } {
+export function getSettings(): { includeTax?: boolean } {
   const config = loadConfig();
   return config.settings || {};
 }
 
 /**
- * Save settings to config file (preserves log path)
+ * Save settings to localStorage
  */
-export function saveSettings(settings: { keybind?: string; fullscreenMode?: boolean; includeTax?: boolean }): void {
+export function saveSettings(settings: { includeTax?: boolean }): void {
   const config = loadConfig();
   config.settings = { ...config.settings, ...settings };
   saveConfig(config);
@@ -208,26 +142,10 @@ export function parseLogLine(line: string): ParsedLogEntry | null {
   };
 }
 
-export function readLogFile(): ParsedLogEntry[] {
-  const logPath = getLogPath();
-  
-  if (!logPath || !fs.existsSync(logPath)) {
-    console.error(`❌ Log file not found at: ${logPath || 'not configured'}`);
-    return [];
-  }
-
-  const stats = fs.statSync(logPath);
-  const fileSize = stats.size;
-
-  const MAX_READ_BYTES = 100 * 1024 * 1024; // 100 MB
-  const startPosition = fileSize > MAX_READ_BYTES ? fileSize - MAX_READ_BYTES : 0;
-
-  const fd = fs.openSync(logPath, 'r');
-  const buffer = Buffer.alloc(fileSize - startPosition);
-  fs.readSync(fd, buffer, 0, fileSize - startPosition, startPosition);
-  fs.closeSync(fd);
-
-  const logContent = buffer.toString('utf-8');
+/**
+ * Parse log file content (from uploaded file)
+ */
+export function parseLogContent(logContent: string): ParsedLogEntry[] {
   const lines = logContent.split('\n');
 
   // First, check if there's a ResetItemsLayout event (sort operation)
@@ -434,52 +352,4 @@ export function readLogFile(): ParsedLogEntry[] {
   }
 
   return entries;
-}
-
-
-export function getLogSize(): number {
-  const logPath = getLogPath();
-  if (!logPath || !fs.existsSync(logPath)) return 0;
-  const stats = fs.statSync(logPath);
-  return stats.size;
-}
-
-export function readLogFromPosition(start: number, end: number): string {
-  const logPath = getLogPath();
-  if (!logPath) return '';
-  
-  const buffer = Buffer.alloc(end - start);
-  const fd = fs.openSync(logPath, 'r');
-  fs.readSync(fd, buffer, 0, end - start, start);
-  fs.closeSync(fd);
-  return buffer.toString('utf-8');
-}
-
-export function ensureLogSizeLimit(maxSizeMB = 500): void {
-  try {
-    const logPath = getLogPath();
-    if (!logPath || !fs.existsSync(logPath)) return;
-
-    const stats = fs.statSync(logPath);
-    const maxBytes = maxSizeMB * 1024 * 1024;
-
-    if (stats.size <= maxBytes) return;
-
-    const KEEP_BYTES = 5 * 1024 * 1024;
-    const start = Math.max(0, stats.size - KEEP_BYTES);
-
-    console.warn(`⚠️  Log file is ${Math.round(stats.size / 1024 / 1024)}MB — truncating...`);
-
-    const fd = fs.openSync(logPath, 'r+');
-    const buffer = Buffer.alloc(stats.size - start);
-    fs.readSync(fd, buffer, 0, stats.size - start, start);
-    fs.ftruncateSync(fd, 0);
-    fs.writeSync(fd, buffer, 0, buffer.length, 0);
-    fs.closeSync(fd);
-
-    console.log(`✅ Log file truncated to last ${Math.round(KEEP_BYTES / 1024 / 1024)}MB`);
-  } catch (error: any) {
-    console.error(`❌ Failed to truncate log file: ${error.message || error}`);
-    // Don't throw - we want the app to continue running even if truncation fails
-  }
 }

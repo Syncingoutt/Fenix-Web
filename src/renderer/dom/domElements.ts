@@ -12,15 +12,10 @@ export const resumeHourlyBtn = document.getElementById('resumeHourly') as HTMLBu
 export const hourlyTimerEl = document.getElementById('hourlyTimer')!;
 export const timerEl = document.getElementById('timer')!;
 export const resetRealtimeBtn = document.getElementById('resetRealtimeBtn') as HTMLButtonElement;
-export const overlayWidgetBtn = document.getElementById('overlayWidgetBtn');
 export const minPriceInput = document.getElementById('minPriceInput') as HTMLInputElement;
 export const maxPriceInput = document.getElementById('maxPriceInput') as HTMLInputElement;
 export const searchInput = document.getElementById('searchInput') as HTMLInputElement;
 export const clearSearch = document.getElementById('clearSearch') as HTMLButtonElement;
-export const customTitleBar = document.getElementById('custom-title-bar')!;
-export const titleBarMinimize = document.getElementById('title-bar-minimize') as HTMLButtonElement;
-export const titleBarMaximize = document.getElementById('title-bar-maximize') as HTMLButtonElement;
-export const titleBarClose = document.getElementById('title-bar-close') as HTMLButtonElement;
 
 /**
  * Initialize initial UI state

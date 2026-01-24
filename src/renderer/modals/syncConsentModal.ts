@@ -1,8 +1,6 @@
-// Cloud sync consent modal
+// Cloud sync consent modal (web version)
 
-import { ElectronAPI } from '../types.js';
-
-declare const electronAPI: ElectronAPI;
+import { webAPI } from '../webAPI.js';
 
 const syncConsentModal = document.getElementById('syncConsentModal')!;
 const syncConsentEnableBtn = document.getElementById('syncConsentEnableBtn') as HTMLButtonElement | null;
@@ -19,19 +17,22 @@ function hideSyncConsentModal(): void {
 export function initSyncConsentModal(): void {
   if (syncConsentEnableBtn) {
     syncConsentEnableBtn.addEventListener('click', async () => {
-      await electronAPI.setCloudSyncEnabled(true);
+      await webAPI.setCloudSyncEnabled(true);
       hideSyncConsentModal();
     });
   }
 
   if (syncConsentDisableBtn) {
     syncConsentDisableBtn.addEventListener('click', async () => {
-      await electronAPI.setCloudSyncEnabled(false);
+      await webAPI.setCloudSyncEnabled(false);
       hideSyncConsentModal();
     });
   }
 
-  electronAPI.onShowSyncConsent(() => {
-    showSyncConsentModal();
+  // Check sync status on load and show modal if needed
+  webAPI.getCloudSyncStatus().then(status => {
+    if (status.consent === 'pending') {
+      showSyncConsentModal();
+    }
   });
 }

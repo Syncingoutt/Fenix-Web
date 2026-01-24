@@ -1,7 +1,8 @@
 // Main renderer orchestrator
 
-import { ElectronAPI, InventoryItem } from './renderer/types.js';
+import { InventoryItem } from './renderer/types.js';
 import { FLAME_ELEMENTIUM_ID } from './renderer/constants.js';
+import { webAPI, initializeWebAPI, handleLogFileUpload } from './renderer/webAPI.js';
 
 // State
 import { setCurrentItems, setItemDatabase, getCurrentItems } from './renderer/state/inventoryState.js';
@@ -44,7 +45,6 @@ import { initUIEvents } from './renderer/events/uiEvents.js';
 // Prices
 import { initPrices } from './renderer/prices/pricesRenderer.js';
 
-declare const electronAPI: ElectronAPI;
 declare const Chart: any;
 
 /**
@@ -77,7 +77,7 @@ function updateOverlayWidgetData(): void {
     total = currentValue;
   }
 
-  electronAPI.updateOverlayWidget({ duration, hourly, total, isHourlyMode, isPaused: hourlyPaused });
+  webAPI.updateOverlayWidget({ duration, hourly, total, isHourlyMode, isPaused: hourlyPaused });
 }
 
 /**
@@ -96,8 +96,8 @@ function updateStats(items: InventoryItem[]): void {
  */
 async function loadInventory(): Promise<void> {
   const [inventory, db] = await Promise.all([
-    electronAPI.getInventory(),
-    electronAPI.getItemDatabase()
+    webAPI.getInventory(),
+    webAPI.getItemDatabase()
   ]);
   
   setItemDatabase(db);
@@ -144,7 +144,7 @@ async function initialize(): Promise<void> {
   // Initialize modals
   initBreakdownModal(renderInventory, () => renderBreakdown(renderInventory));
   initUpdateModal();
-  initSetupModal(loadInventory);
+  initSetupModal(loadInventory, handleLogFileUpload);
   initSyncConsentModal();
   initSyncDisableConfirmModal();
   
@@ -205,8 +205,8 @@ async function initialize(): Promise<void> {
   // Initialize prices page
   initPrices();
 
-// Listen to timer ticks from main process
-electronAPI.onTimerTick((data) => {
+// Listen to timer ticks
+webAPI.onTimerTick((data) => {
   if (data.type === 'realtime') {
       setRealtimeElapsedSeconds(data.seconds);
     
@@ -243,14 +243,14 @@ electronAPI.onTimerTick((data) => {
 });
 
   // Listen for inventory updates
-electronAPI.onInventoryUpdate(() => {
+webAPI.onInventoryUpdate(() => {
       loadInventory();
   });
   
   // Load tax preference on startup and initialize
   const [settings, configured] = await Promise.all([
-    electronAPI.getSettings(),
-    electronAPI.isLogPathConfigured()
+    webAPI.getSettings(),
+    webAPI.isLogPathConfigured()
   ]);
   
   setIncludeTax(settings.includeTax !== undefined ? settings.includeTax : false);
@@ -267,8 +267,15 @@ electronAPI.onInventoryUpdate(() => {
 }
 
 // Start initialization when DOM is ready
+async function startApp() {
+  // Initialize web API first
+  await initializeWebAPI();
+  // Then initialize UI
+  await initialize();
+}
+
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initialize);
-  } else {
-  initialize();
+  document.addEventListener('DOMContentLoaded', startApp);
+} else {
+  startApp();
 }

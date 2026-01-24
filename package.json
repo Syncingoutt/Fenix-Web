@@ -1,75 +1,22 @@
 {
-  "name": "fenix",
+  "name": "fenix-web",
   "version": "2.4.0",
-  "description": "Torchlight Infinite Inventory Tracker",
-  "main": "dist/main.js",
+  "description": "Torchlight Infinite Inventory Tracker - Web Version",
+  "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.main.json && tsc -p tsconfig.renderer.json && xcopy \"src\\ui\" \"dist\\ui\" /E /I /Y",
-    "start": "npm run build && electron .",
-    "dev": "tsc -p tsconfig.main.json && tsc -p tsconfig.renderer.json && xcopy \"src\\ui\" \"dist\\ui\" /E /I /Y && electron .",
-    "package": "npm run build && electron-builder",
-    "prod": "node scripts/release.js"
-  },
-  "build": {
-    "appId": "com.fenix.tracker",
-    "productName": "Fenix",
-    "artifactName": "Fenix.Setup.${ext}",
-    "directories": {
-      "output": "release"
-    },
-    "files": [
-      "dist/**/*",
-      "package.json",
-      "assets/**/*",
-      "!src/**/*"
-    ],
-    "win": {
-      "target": "nsis",
-      "icon": "assets/AppIcon.ico"
-    },
-    "electronLanguages": ["en"],
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "allowElevation": true,
-      "perMachine": false,
-      "createDesktopShortcut": "always",
-      "createStartMenuShortcut": true,
-      "shortcutName": "Fenix",
-      "runAfterFinish": true,
-      "warningsAsErrors": false,
-      "installerIcon": "assets/AppIcon.ico",
-      "uninstallerIcon": "assets/AppIcon.ico",
-      "installerHeaderIcon": "assets/AppIcon.ico",
-      "deleteAppDataOnUninstall": false,
-      "license": "LICENSE",
-      "packElevateHelper": true
-    },
-    "publish": {
-      "provider": "github",
-      "owner": "Syncingoutt",
-      "repo": "Fenix"
-    },
-    "extraResources": [
-      "item_database.json",
-      "assets/**/*"
-    ],
-    "asar": true,
-    "asarUnpack": []
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
   },
   "keywords": [],
   "author": "Syncingoutt",
   "license": "MIT",
   "devDependencies": {
-    "@types/electron": "^1.6.12",
     "@types/node": "^24.9.1",
-    "concurrently": "^9.2.1",
-    "electron": "^39.0.0",
-    "electron-builder": "^26.0.12",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vite": "^5.0.0"
   },
   "dependencies": {
-    "electron-updater": "^6.6.2",
     "firebase": "^10.14.0"
   }
 }

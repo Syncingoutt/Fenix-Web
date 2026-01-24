@@ -1,13 +1,12 @@
 // Prices page renderer with sparklines
 
-import { ElectronAPI, PriceCache, ItemDatabase } from '../types.js';
+import { PriceCache, ItemDatabase } from '../types.js';
+import { webAPI } from '../webAPI.js';
 
 // Re-export for convenience
 export type { PriceCache, PriceCacheEntry } from '../types.js';
 import { FLAME_ELEMENTIUM_ID } from '../constants.js';
 import { getPriceAgeClass } from '../utils/formatting.js';
-
-declare const electronAPI: ElectronAPI;
 
 interface PriceHistoryPoint {
   date: string;
@@ -293,8 +292,8 @@ export function renderPrices(): void {
 export async function loadPrices(): Promise<void> {
   try {
     const [cache, db] = await Promise.all([
-      electronAPI.getPriceCache(),
-      electronAPI.getItemDatabase()
+      webAPI.getPriceCache(),
+      webAPI.getItemDatabase()
     ]);
     
     itemDatabase = db;
@@ -498,7 +497,7 @@ export function initPrices(): void {
   }
   
   // Listen for inventory updates to refresh prices
-  electronAPI.onInventoryUpdate(() => {
+  webAPI.onInventoryUpdate(() => {
     const pricesPage = document.getElementById('page-prices');
     if (pricesPage?.classList.contains('active')) {
       loadPrices();

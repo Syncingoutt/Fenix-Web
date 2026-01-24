@@ -30,9 +30,8 @@ import {
 } from '../state/wealthState.js';
 import { getCurrentItems } from '../state/inventoryState.js';
 import { formatTime } from '../utils/formatting.js';
-import { ElectronAPI, HourlyBucket } from '../types.js';
-
-declare const electronAPI: ElectronAPI;
+import { HourlyBucket } from '../types.js';
+import { webAPI } from '../webAPI.js';
 
 // These will be set by the main renderer
 let wealthValueEl: HTMLElement;
@@ -136,8 +135,8 @@ export function actuallyStartHourlyTracking(): void {
   setIsHourlyActive(true);
   setHourlyPaused(false);
   
-  // Tell main process to start the timer
-  electronAPI.startHourlyTimer();
+  // Start the timer
+  webAPI.startHourlyTimer();
   
   // Initial update
   updateHourlyWealth();
@@ -257,7 +256,7 @@ export function captureHourlyBucket(): void {
 export function pauseHourlyTracking(): void {
   console.log('⏸️ Pausing hourly tracking');
   setHourlyPaused(true);
-  electronAPI.pauseHourlyTimer();
+  webAPI.pauseHourlyTimer();
   
   // Update previous quantities before pausing to avoid false usage detection on resume
   updatePreviousQuantities();
@@ -275,7 +274,7 @@ export function pauseHourlyTracking(): void {
 export function resumeHourlyTracking(): void {
   console.log('▶️ Resuming hourly tracking');
   setHourlyPaused(false);
-  electronAPI.resumeHourlyTimer();
+  webAPI.resumeHourlyTimer();
   
   // Update previous quantities on resume to start tracking from current state
   updatePreviousQuantities();
@@ -294,7 +293,7 @@ export function stopHourlyTracking(): void {
   console.log('⏹️ Stopping hourly tracking');
   
   // Tell main process to stop timer
-  electronAPI.stopHourlyTimer();
+  webAPI.stopHourlyTimer();
   
   const finalGain = getHourlyWealthGain();
   const hourlyBuckets = getHourlyBuckets();

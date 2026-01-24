@@ -2,7 +2,6 @@
 
 import { setWealthMode, getWealthMode, getIsHourlyActive, getRealtimeElapsedSeconds, getHourlyPaused, getIncludedItems } from '../state/wealthState.js';
 import { formatTime } from '../utils/formatting.js';
-import { ElectronAPI } from '../types.js';
 import {
   realtimeBtn,
   hourlyBtn,
@@ -12,11 +11,8 @@ import {
   pauseHourlyBtn,
   resumeHourlyBtn,
   timerEl,
-  resetRealtimeBtn,
-  overlayWidgetBtn
+  resetRealtimeBtn
 } from '../dom/domElements.js';
-
-declare const electronAPI: ElectronAPI;
 
 let startHourlyTracking: () => void;
 let stopHourlyTracking: () => void;
@@ -129,24 +125,6 @@ export function initWealthEvents(
   pauseHourlyBtn.addEventListener('click', pauseHourlyTracking);
   resumeHourlyBtn.addEventListener('click', resumeHourlyTracking);
   resetRealtimeBtn.addEventListener('click', resetRealtimeTracking);
-  
-  // Overlay widget toggle button
-  overlayWidgetBtn?.addEventListener('click', () => {
-    electronAPI.toggleOverlayWidget();
-  });
-  
-  // Listen for widget pause/resume buttons
-  electronAPI.onWidgetPauseHourly(() => {
-    if (getIsHourlyActive() && !getHourlyPaused()) {
-      pauseHourlyTracking();
-    }
-  });
-  
-  electronAPI.onWidgetResumeHourly(() => {
-    if (getIsHourlyActive() && getHourlyPaused()) {
-      resumeHourlyTracking();
-    }
-  });
   
   // Compass/Beacon prompt modal event listeners
   document.getElementById('compassBeaconPromptNo')?.addEventListener('click', () => {

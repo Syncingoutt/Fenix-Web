@@ -23,25 +23,6 @@
   </head>
 
   <body>
-      <!-- Custom Title Bar (only visible in windowed mode) -->
-      <div id="custom-title-bar" style="display: none;">
-        <div class="title-bar-drag-area">
-          <div class="title-bar-title">Fenix</div>
-        </div>
-        <div class="title-bar-controls">
-          <button id="title-bar-minimize" class="title-bar-button" title="Minimize">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="3" y="8" width="10" height="1.5" rx="0.75" fill="#808080"/>
-            </svg>            
-          </button>
-          <button id="title-bar-maximize" class="title-bar-button" title="Maximize"></button>
-          <button id="title-bar-close" class="title-bar-button" title="Close">
-            <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="16" height="16" viewBox="0 0 50 50">
-              <path d="M 7.71875 6.28125 L 6.28125 7.71875 L 23.5625 25 L 6.28125 42.28125 L 7.71875 43.71875 L 25 26.4375 L 42.28125 43.71875 L 43.71875 42.28125 L 26.4375 25 L 43.71875 7.71875 L 42.28125 6.28125 L 25 23.5625 Z" fill="currentColor"></path>
-              </svg>
-          </button>
-        </div>
-      </div>
       <header>
         <div class="header">
           <div class="header-logo">
@@ -57,6 +38,14 @@
             <div id="nav-strategies" class="nav-item">Strategies</div>
           </div>
           <div class="header-user">
+            <button id="uploadLogBtn" class="upload-log-btn" title="Upload UE_game.log">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <polyline points="17 8 12 3 7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>Upload Log</span>
+            </button>
             <div id="settingsButton" class="settings-button" title="Settings">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -72,12 +61,6 @@
               <button id="openSettingsBtn" class="settings-menu-button">
                 <span>Settings</span>
               </button>
-              <div class="settings-menu-divider"></div>
-              <button id="checkUpdatesBtn" class="settings-menu-button">
-                <span>Check for Updates</span>
-                <span id="updateSpinner" class="update-spinner" style="display: none;">⏳</span>
-              </button>
-              <div id="updateStatus" class="update-status" style="display: none;"></div>
             </div>
           </div>
         </div>
@@ -149,14 +132,6 @@
               <div id="wealthValue">0</div>
             </div>
             <div class="subtext">Total</div>
-            <button id="overlayWidgetBtn" class="overlay-widget-btn" title="Toggle Mini Overlay">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
-                <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
-                <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
-                <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
-              </svg>
-            </button>
           </div>
         </div>
 
@@ -477,55 +452,16 @@
               <div class="settings-section-title">General Settings</div>
               
               <div class="settings-group">
-                <div class="settings-group-label">Window Mode</div>
-                <div class="settings-group-description">Choose how the app window behaves</div>
-                <div class="window-mode-toggle">
-                  <label class="window-mode-option">
-                    <input type="radio" name="windowMode" value="fullscreen" id="fullscreenModeRadio">
-                    <div class="window-mode-icon">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M4 8H8V4M20 8H16V4M4 16H8V20M20 16H16V20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                    </div>
-                    <div class="window-mode-content">
-                      <span class="window-mode-title">Fullscreen Mode</span>
-                      <div class="window-mode-description">Always-on-top fullscreen overlay for gaming</div>
-                    </div>
-                  </label>
-                  <label class="window-mode-option">
-                    <input type="radio" name="windowMode" value="normal" id="normalModeRadio">
-                    <div class="window-mode-icon">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
-                        <path d="M3 8H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                      </svg>
-                    </div>
-                    <div class="window-mode-content">
-                      <span class="window-mode-title">Windowed Mode</span>
-                      <div class="window-mode-description">Resizable window with title bar and controls</div>
-                    </div>
-                  </label>
-                </div>
-              </div>
-              
-              <div class="settings-group">
-                <div class="settings-group-label">Toggle Overlay Keybind</div>
-                <div class="settings-group-description">Press a key combination to toggle the overlay window</div>
-                <div class="keybind-input-wrapper">
-                  <input type="text" id="keybindInput" class="keybind-input" readonly placeholder="Press keys...">
-                  <button id="changeKeybindBtn" class="keybind-btn">Change</button>
-                  <button id="resetKeybindBtn" class="keybind-btn secondary">Reset</button>
-                </div>
-                <div class="keybind-status" id="keybindStatus"></div>
-              </div>
-
-              <div class="settings-group">
-                <div class="settings-group-label">Username</div>
-                <div class="settings-group-description">Optional public name (3-20 characters). Changeable every 24 hours.</div>
-                <div class="settings-input-row">
-                  <input type="text" id="usernameInput" class="settings-text-input" placeholder="Leave blank for anonymous">
-                </div>
-                <div class="settings-helper-text" id="usernameHelperText"></div>
+                <div class="settings-group-label">Upload Log File</div>
+                <div class="settings-group-description">Upload your UE_game.log file to track inventory</div>
+                <button id="settingsUploadLogBtn" class="settings-upload-btn">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <polyline points="17 8 12 3 7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span>Upload UE_game.log</span>
+                </button>
               </div>
             </div>
             <div class="settings-section" id="preferencesSection">
@@ -563,7 +499,7 @@
       </div>
     </div>
 
-    <script type="module" src="../renderer.js"></script>
+    <script type="module" src="/renderer.ts"></script>
     <script>
       function updateSegmentedTransform() {
         const activeBg = document.querySelector('.segmented-active-bg');
