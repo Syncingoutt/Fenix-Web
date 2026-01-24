@@ -1,6 +1,6 @@
 import { initializeApp, FirebaseApp } from 'firebase/app';
 import { getAuth, signInAnonymously, Auth } from 'firebase/auth';
-import { getFirestore, Firestore, Timestamp, collection, getDocs } from 'firebase/firestore';
+import { getFirestore, Firestore, Timestamp, doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { PriceCache, loadPriceCache } from './database';
 import { updatePriceHistoryCache } from './priceHistoryStore';
 
@@ -38,7 +38,10 @@ const DEFAULT_CONFIG: CloudSyncConfig = {
 };
 
 const SYNC_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
-const PRICE_COLLECTION_PATH = 'prices';
+// Snapshot schema:
+// pricesSnapshots/{leagueId} -> { data: { [baseId]: { price, timestamp, listingCount? } }, lastUpdated: Timestamp }
+const DEFAULT_LEAGUE_ID = 's11-vorax';
+const PRICE_SNAPSHOT_DOC_PATH = `pricesSnapshots/${DEFAULT_LEAGUE_ID}`;
 const PRICE_LAST_SYNC_KEY = 'fenix_price_last_sync_at';
 
 function parseTimestamp(value: unknown): number | null {
@@ -158,6 +161,7 @@ export class PriceSyncService {
   private lastSyncCache: PriceCache = {};
   private initializing: Promise<boolean> | null = null;
   private lastSyncCursorMs: number | null = null;
+  private snapshotUnsub: (() => void) | null = null;
   private lastCacheUpdatedAt: number | null = null;
   private lastCacheError: string | null = null;
 
@@ -237,6 +241,7 @@ export class PriceSyncService {
       }
     }
 
+    this.subscribeToSnapshot();
     return true;
   }
 
@@ -270,31 +275,31 @@ export class PriceSyncService {
     }
 
     try {
-      const snapshot = await getDocs(collection(this.db, PRICE_COLLECTION_PATH));
+      const snapshotRef = doc(this.db, PRICE_SNAPSHOT_DOC_PATH);
+      const snapshot = await getDoc(snapshotRef);
+      if (!snapshot.exists()) {
+        this.lastCacheError = 'Price snapshot not available';
+        return this.lastSyncCache;
+      }
+
+      const data = snapshot.data() as Record<string, unknown>;
+      const rawPrices = data?.data;
+      const lastUpdatedAt = parseTimestamp(data?.lastUpdated) ?? null;
       const prices: PriceCache = {};
-      let lastUpdatedAt: number | null = null;
 
-      snapshot.forEach((docSnap) => {
-        const data = docSnap.data() as Record<string, unknown>;
-        const price = typeof data.price === 'number' ? data.price : null;
-        const timestamp = parseTimestamp(data.timestamp);
-
-        if (price === null || timestamp === null) {
-          return;
+      if (rawPrices && typeof rawPrices === 'object') {
+        for (const [baseId, entry] of Object.entries(rawPrices as Record<string, any>)) {
+          const price = typeof entry?.price === 'number' ? entry.price : null;
+          const timestamp = parseTimestamp(entry?.timestamp);
+          if (price === null || timestamp === null) continue;
+          const listingCount = typeof entry?.listingCount === 'number' ? entry.listingCount : undefined;
+          prices[baseId] = {
+            price,
+            timestamp,
+            ...(listingCount !== undefined ? { listingCount } : {})
+          };
         }
-
-        const listingCount = typeof data.listingCount === 'number' ? data.listingCount : undefined;
-        prices[docSnap.id] = {
-          price,
-          timestamp,
-          ...(listingCount !== undefined ? { listingCount } : {})
-        };
-
-        const updatedAt = parseTimestamp(data.updatedAt) ?? timestamp;
-        if (updatedAt && (!lastUpdatedAt || updatedAt > lastUpdatedAt)) {
-          lastUpdatedAt = updatedAt;
-        }
-      });
+      }
 
       const pricesWithHistory = await updatePriceHistoryCache(prices);
       this.lastSyncAt = now;
@@ -304,10 +309,50 @@ export class PriceSyncService {
       this.lastCacheError = null;
       return pricesWithHistory;
     } catch (error) {
-      console.error('Failed to sync prices from Firestore:', error);
+      console.error('Failed to sync prices from snapshot:', error);
       this.lastCacheError = 'Failed to read prices';
       return this.lastSyncCache;
     }
+  }
+
+  private subscribeToSnapshot(): void {
+    if (!this.db || this.snapshotUnsub) return;
+    const snapshotRef = doc(this.db, PRICE_SNAPSHOT_DOC_PATH);
+    this.snapshotUnsub = onSnapshot(
+      snapshotRef,
+      async (snapshot) => {
+        if (!snapshot.exists()) return;
+        const data = snapshot.data() as Record<string, unknown>;
+        const rawPrices = data?.data;
+        const lastUpdatedAt = parseTimestamp(data?.lastUpdated) ?? null;
+        const prices: PriceCache = {};
+
+        if (rawPrices && typeof rawPrices === 'object') {
+          for (const [baseId, entry] of Object.entries(rawPrices as Record<string, any>)) {
+            const price = typeof entry?.price === 'number' ? entry.price : null;
+            const timestamp = parseTimestamp(entry?.timestamp);
+            if (price === null || timestamp === null) continue;
+            const listingCount = typeof entry?.listingCount === 'number' ? entry.listingCount : undefined;
+            prices[baseId] = {
+              price,
+              timestamp,
+              ...(listingCount !== undefined ? { listingCount } : {})
+            };
+          }
+        }
+
+        const pricesWithHistory = await updatePriceHistoryCache(prices);
+        this.lastSyncCache = pricesWithHistory;
+        this.lastSyncAt = Date.now();
+        saveLastSyncAt(this.lastSyncAt);
+        this.lastCacheUpdatedAt = lastUpdatedAt;
+        this.lastCacheError = null;
+      },
+      (error) => {
+        console.error('Failed to subscribe to price snapshot:', error);
+        this.lastCacheError = 'Failed to subscribe to price snapshot';
+      }
+    );
   }
 
   getCacheStatus(): { lastUpdated: number | null; lastError: string | null } {
