@@ -133,8 +133,8 @@ export const webAPI = {
     return inventoryManager.getPriceCacheAsObject();
   },
 
-  getPriceCacheStatus(): { lastUpdated: number | null } {
-    if (!priceSyncService) return { lastUpdated: null };
+  getPriceCacheStatus(): { lastUpdated: number | null; lastError: string | null } {
+    if (!priceSyncService) return { lastUpdated: null, lastError: 'Price sync not initialized' };
     return priceSyncService.getCacheStatus();
   },
 

@@ -34,7 +34,8 @@ let currentSearchTerm: string = '';
 let sortColumn: string = 'price';
 let sortDirection: 'asc' | 'desc' = 'desc';
 
-function formatLastUpdated(value: number | null): string {
+function formatLastUpdated(value: number | null, error: string | null): string {
+  if (error) return 'Last updated: unavailable';
   if (!value) return 'Last updated: --';
   const date = new Date(value);
   return `Last updated: ${date.toLocaleString()}`;
@@ -43,8 +44,8 @@ function formatLastUpdated(value: number | null): string {
 function updatePricesLastUpdated(): void {
   const el = document.getElementById('pricesLastUpdated');
   if (!el) return;
-  const { lastUpdated } = webAPI.getPriceCacheStatus();
-  el.textContent = formatLastUpdated(lastUpdated);
+  const { lastUpdated, lastError } = webAPI.getPriceCacheStatus();
+  el.textContent = formatLastUpdated(lastUpdated, lastError);
 }
 
 /**
