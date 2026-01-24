@@ -119,7 +119,7 @@ export async function loadPriceCache(
       }
       
       if (migrationNeeded) {
-        console.log('💰 Migrated price cache to new format with timestamps');
+        console.log('Migrated price cache to new format with timestamps');
       }
       
       localCache = migratedCache;

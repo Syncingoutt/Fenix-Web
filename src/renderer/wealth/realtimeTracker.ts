@@ -52,8 +52,6 @@ export function initRealtimeTracking(): void {
  * Reset realtime timer and tracking
  */
 export function resetRealtimeTracking(): void {
-  console.log('🔄 Resetting realtime timer and per hour calculation');
-  
   // Reset timer state
   setRealtimeElapsedSeconds(0);
   setRealtimeStartTime(Date.now());
@@ -105,6 +103,4 @@ export async function initRealtimeTimer(): Promise<void> {
   const state = await webAPI.getTimerState();
   setRealtimeElapsedSeconds(state.realtimeSeconds);
   timerEl.textContent = formatTime(state.realtimeSeconds);
-  
-  console.log('✅ Realtime timer initialized');
 }

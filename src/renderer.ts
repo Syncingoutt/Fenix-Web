@@ -236,7 +236,6 @@ webAPI.onTimerTick((data) => {
 
     // Check if we've completed an hour
       if (data.seconds % 3600 === 0 && data.seconds > 0) {
-        console.log(`🎉 Hour ${Math.floor(data.seconds / 3600)} completed!`);
       captureHourlyBucket();
     }
   }

@@ -36,9 +36,9 @@ const DEFAULT_CONFIG: CloudSyncConfig = {
   }
 };
 
-const SYNC_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+const SYNC_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 const PRICE_CACHE_DOC_PATH = 'meta/priceCache';
-const PRICE_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+const PRICE_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
 function loadCloudSyncConfig(): CloudSyncConfig {
   try {

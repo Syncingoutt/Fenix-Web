@@ -102,7 +102,39 @@
           </div>
         </div>
         
-        
+        <div class="log-cta" id="logCta">
+          <div class="log-cta-text">
+            <div class="log-cta-title">Start tracking your session</div>
+            <div class="log-cta-subtitle">Upload your UE_game.log to get started. The "Watch Log" button is experimental, feedback needed, it should update the inventory every 10s.</div>
+          </div>
+          <div class="log-cta-actions">
+            <button id="uploadLogBtn" class="upload-log-btn" title="Upload UE_game.log">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <polyline points="17 8 12 3 7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>Upload Log</span>
+            </button>
+            <button id="watchLogBtn" class="upload-log-btn" title="Watch UE_game.log">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+                <path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>Watch Log</span>
+            </button>
+          </div>
+        </div>
+        <div class="log-cta-help">
+          <button class="log-cta-help-link" id="openSetupGuideLink" type="button" aria-label="Learn how to upload log">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+              <path d="M12 8v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span>Learn how to upload log</span>
+          </button>
+        </div>
 
         <div class="stats-container">
             <div class="container-big">
@@ -139,14 +171,6 @@
               <img src="../../assets/100300.webp" alt="FEICON"> 
               <div id="wealthValue">0</div>
             </div>
-            <button id="uploadLogBtn" class="upload-log-btn" title="Upload UE_game.log">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <polyline points="17 8 12 3 7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              <span>Upload Log</span>
-            </button>
             <div class="subtext">Total</div>
           </div>
         </div>
@@ -318,6 +342,61 @@
         <div class="update-modal-actions">
           <button class="update-btn update-btn-primary" id="updateBtnPrimary">Download Now</button>
           <button class="update-btn update-btn-secondary" id="updateBtnSecondary">Later</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Setup Guide Modal -->
+    <div class="setup-guide-modal" id="setupGuideModal">
+      <div class="setup-guide-content">
+        <button class="setup-guide-close" id="setupGuideClose" aria-label="Close setup guide">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M5 5L15 15M15 5L5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <div class="setup-guide-header">
+          <div class="setup-guide-title">Setting it up</div>
+          <div class="setup-guide-progress" id="setupGuideProgress">Step 1 of 6</div>
+        </div>
+        <div class="setup-guide-steps" id="setupGuideSteps">
+          <div class="setup-guide-step active">
+            <div class="setup-guide-step-title">1. Enable logs in Torchlight</div>
+            <div class="setup-guide-step-text">Open Torchlight, go to the "Other" section, and click "Enable Log".</div>
+            <img class="setup-guide-image" alt="Torchlight settings menu with 'enable log' button highlighted" src="https://github.com/user-attachments/assets/7a75b5b8-90b2-4db1-9584-199047a8f80b" />
+          </div>
+          <div class="setup-guide-step">
+            <div class="setup-guide-step-title">2. Sort any inventory page</div>
+            <div class="setup-guide-step-text">
+              Make sure the page has at least 1 item; empty pages won’t update logs.
+            </div>
+            <img class="setup-guide-image" alt="Torchlight inventory UI with 'sort' button highlighted" src="https://github.com/user-attachments/assets/3578bfca-c971-41d7-8d90-b6f7b9570409" />
+          </div>
+          <div class="setup-guide-step">
+            <div class="setup-guide-step-title">3. Locate the Logs folder</div>
+            <div class="setup-guide-step-text">
+              On Steam, it is usually:<br>
+              <code>\SteamLibrary\steamapps\common\Torchlight Infinite\UE_game\TorchLight\Saved\Logs</code>
+            </div>
+          </div>
+          <div class="setup-guide-step">
+            <div class="setup-guide-step-title">4. Upload or Watch your log</div>
+            <div class="setup-guide-step-text">
+              Upload reads once. Watch Log keeps your inventory updated live.
+            </div>
+          </div>
+        </div>
+        <div class="setup-guide-actions">
+          <button class="timer-btn" id="setupGuidePrev">Back</button>
+          <button class="timer-btn" id="setupGuideNext">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="setup-guide-spotlight" id="setupGuideSpotlight">
+      <div class="setup-guide-spotlight-note">
+        <div class="setup-guide-spotlight-text">Click one of these to start tracking.</div>
+        <div class="setup-guide-spotlight-actions">
+          <button class="timer-btn" id="setupGuideSpotlightBack">Back</button>
         </div>
       </div>
     </div>

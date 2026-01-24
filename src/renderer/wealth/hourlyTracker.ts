@@ -87,8 +87,6 @@ export function startHourlyTracking(): void {
  * Actually start hourly tracking after user confirms
  */
 export function actuallyStartHourlyTracking(): void {
-  console.log('🕐 Starting hourly tracking...');
-  
   const currentItems = getCurrentItems();
   const hourlyStartSnapshot = getHourlyStartSnapshot();
   const previousQuantities = getPreviousQuantities();
@@ -167,7 +165,6 @@ export function trackCompassBeaconUsage(): void {
       const used = previousQty - currentQty;
       const currentUsage = hourlyUsage.get(baseId) || 0;
       hourlyUsage.set(baseId, currentUsage + used);
-      console.log(`📦 Tracked usage: ${currentItem?.itemName || baseId} used ${used} (total this hour: ${currentUsage + used})`);
     }
     
     // Track purchases: quantity increased (bought)
@@ -175,7 +172,6 @@ export function trackCompassBeaconUsage(): void {
       const bought = currentQty - previousQty;
       const currentPurchases = hourlyPurchases.get(baseId) || 0;
       hourlyPurchases.set(baseId, currentPurchases + bought);
-      console.log(`💰 Tracked purchase: ${currentItem?.itemName || baseId} bought ${bought} (total this hour: ${currentPurchases + bought})`);
     }
   }
 }
@@ -254,7 +250,6 @@ export function captureHourlyBucket(): void {
  * Pause hourly tracking
  */
 export function pauseHourlyTracking(): void {
-  console.log('⏸️ Pausing hourly tracking');
   setHourlyPaused(true);
   webAPI.pauseHourlyTimer();
   
@@ -272,7 +267,6 @@ export function pauseHourlyTracking(): void {
  * Resume hourly tracking
  */
 export function resumeHourlyTracking(): void {
-  console.log('▶️ Resuming hourly tracking');
   setHourlyPaused(false);
   webAPI.resumeHourlyTimer();
   
@@ -290,7 +284,6 @@ export function resumeHourlyTracking(): void {
  * Stop hourly tracking
  */
 export function stopHourlyTracking(): void {
-  console.log('⏹️ Stopping hourly tracking');
   
   // Tell main process to stop timer
   webAPI.stopHourlyTimer();
