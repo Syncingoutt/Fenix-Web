@@ -103,7 +103,7 @@ export function renderUsageSection(): void {
       return `
         <div class="item-row">
           <div class="item-name">
-            <img src="../../assets/${baseId}.webp" 
+            <img src="${(import.meta.env.BASE_URL || '/')}assets/${baseId}.webp" 
                  alt="${itemName}" 
                  class="item-icon"
                  onerror="this.style.display='none'">

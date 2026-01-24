@@ -175,7 +175,8 @@ function renderPriceRow(item: PriceItem, index: number): string {
   const sparklineData = generateSparklineData(item.history, item.price);
   
   // Get item icon - images are in assets folder with format {baseId}.webp
-  const iconPath = `../../assets/${item.baseId}.webp`;
+  const baseUrl = import.meta.env.BASE_URL || '/';
+  const iconPath = `${baseUrl}assets/${item.baseId}.webp`;
   
   const trendClass = `trend-${item.trend}`;
   const priceFormatted = formatPrice(item.price);

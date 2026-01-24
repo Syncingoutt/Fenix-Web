@@ -207,7 +207,8 @@ export function showCompassBeaconSelection(): void {
     checkboxLabel.className = 'checkbox-label';
     
     const icon = document.createElement('img');
-    icon.src = `../../assets/${item.baseId}.webp`;
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    icon.src = `${baseUrl}assets/${item.baseId}.webp`;
     icon.alt = item.itemName;
     icon.className = 'checkbox-icon';
     icon.onerror = () => { icon.style.display = 'none'; };

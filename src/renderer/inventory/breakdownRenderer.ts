@@ -57,7 +57,7 @@ export function renderBreakdown(renderInventoryFn: () => void): void {
     const isSelected = selectedGroupFilter === group;
     return `
       <div class="breakdown-group ${isSelected ? 'selected' : ''}" data-group="${group}" title="${formattedGroupName}">
-        <img src="../../assets/${group}.webp" alt="${formattedGroupName}" class="breakdown-icon" title="${formattedGroupName}" onerror="this.style.display='none'">
+        <img src="${(import.meta.env.BASE_URL || '/')}assets/${group}.webp" alt="${formattedGroupName}" class="breakdown-icon" title="${formattedGroupName}" onerror="this.style.display='none'">
         <span class="breakdown-group-value" title="${formattedGroupName}">${total.toFixed(0)} FE</span>
       </div>
     `;

@@ -56,7 +56,7 @@ export function renderInventory(): void {
       return `
       <div class="item-row">
         <div class="item-name">
-          <img src="../../assets/${item.baseId}.webp" 
+          <img src="${(import.meta.env.BASE_URL || '/')}assets/${item.baseId}.webp" 
                alt="${item.itemName}" 
                class="item-icon"
                onerror="this.style.display='none'">
