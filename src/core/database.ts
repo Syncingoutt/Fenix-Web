@@ -74,11 +74,8 @@ const PRICE_CACHE_KEY = 'fenix_price_cache';
  */
 export async function loadItemDatabase(): Promise<ItemDatabase> {
   try {
-    // Try public directory first (for dev), then root (for production)
-    let response = await fetch('/item_database.json');
-    if (!response.ok) {
-      response = await fetch('/public/item_database.json');
-    }
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    let response = await fetch(`${baseUrl}item_database.json`);
     if (!response.ok) {
       throw new Error(`Failed to load item database: ${response.statusText}`);
     }
