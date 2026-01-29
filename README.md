@@ -6,6 +6,8 @@
 
 <p><b>This project does not use the Chinese FE tracker DB; meaning that some items might be missing (JSON file is over 300+). I have not added organs from Vorax, but all other items have been added.</b></p>
 
+The web version of Fenix will always be updated a week after the Desktop version.
+
 <i>Disclaimer: Portions of this repository were created or refined using AI-assisted development tools. Cursor was used extensively for script writing. UI/UX design was made by me without the use of AI.</i>
 
 <details>
