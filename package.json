@@ -4,7 +4,8 @@
   "description": "Torchlight Infinite Inventory Tracker - Web Version",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "predev": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"if (Test-Path .\\item_database.json) { Copy-Item .\\item_database.json .\\public\\item_database.json -Force }; if (Test-Path .\\assets) { if (-not (Test-Path .\\public\\assets)) { New-Item -ItemType Directory -Path .\\public\\assets -Force | Out-Null }; Copy-Item .\\assets\\* .\\public\\assets\\ -Force -Recurse }\"",
+    "dev": "npm run predev && vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "prod": "npm run build && powershell -NoProfile -ExecutionPolicy Bypass -Command \"if (Test-Path .\\docs) { Remove-Item .\\docs -Recurse -Force }; New-Item -ItemType Directory -Path .\\docs | Out-Null; Copy-Item dist\\* .\\docs -Recurse -Force; New-Item -ItemType File -Path .\\docs\\.nojekyll -Force | Out-Null\""
