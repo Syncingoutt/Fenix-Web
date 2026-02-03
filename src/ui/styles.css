@@ -128,10 +128,6 @@ body::-webkit-scrollbar {
 img:not(.header-logo-pic,.setup-guide-image) {
   width: calc(42px * var(--scale));
   height: calc(42px * var(--scale));
-  min-width: calc(42px * var(--scale));
-  min-height: calc(42px * var(--scale));
-  max-width: none;
-  max-height: none;
 }
 
 /* ============================================

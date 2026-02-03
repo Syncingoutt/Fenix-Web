@@ -245,6 +245,10 @@ export function initUIEvents(
     });
 
     window.addEventListener('resize', () => {
+      const localDismissed = localStorage.getItem(setupGuideDismissedKey);
+      const dismissed = localDismissed === 'true';
+      if (dismissed) return;
+      
       const activeIndex = Array.from(setupGuideSteps).findIndex(step => step.classList.contains('active'));
       if (activeIndex >= 0) {
         updateSetupGuideStep(activeIndex);
