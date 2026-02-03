@@ -20,8 +20,8 @@
       updateScale();
       window.addEventListener('resize', updateScale);
     </script>
-    <script type="module" crossorigin src="./assets/main-CALuLWW-.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/main-CNkwhWG7.css">
+    <script type="module" crossorigin src="./assets/main-CEz8oyXZ.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/main-XKBKH04M.css">
   </head>
 
   <body>
@@ -410,7 +410,7 @@
         </div>
         <div class="compass-beacon-prompt-body">
           <div class="compass-beacon-prompt-message">
-            Do you want to include compasses and beacons in your hourly tracking?
+            Do you want to include compasses and beacons in your hourly spending calculation?
             <br><br>
             If yes, you'll be able to select which ones to include in the calculation.
           </div>
@@ -432,7 +432,7 @@
         </button>
         <div class="compass-beacon-selection-header">
           <div class="compass-beacon-selection-title">Select Compasses & Beacons</div>
-          <div class="compass-beacon-selection-subtitle">Selected items will be included in the hourly calculation</div>
+          <div class="compass-beacon-selection-subtitle">Selected items are factored into the hourly spending calculation.</div>
         </div>
         <div class="compass-beacon-selection-body">
           <div class="compass-beacon-search-container">
@@ -442,8 +442,11 @@
             </svg>
             <input type="text" id="compassBeaconSearch" class="compass-beacon-search" placeholder="Search compasses and beacons...">
           </div>
-          <div class="compass-beacon-helper-actions" id="compassBeaconHelperActions" style="display: none;">
-            <button class="compass-beacon-restore-link" id="compassBeaconRestore">Reapply last selection</button>
+          <div class="compass-beacon-helper-actions" id="compassBeaconHelperActions">
+            <label class="compass-beacon-restore-checkbox">
+              <input type="checkbox" id="compassBeaconRestore">
+              <span>Reapply last selection</span>
+            </label>
           </div>
           <button class="compass-beacon-clear-btn" id="compassBeaconSelectionClear">Clear Selection</button>
           <div class="compass-beacon-checkboxes" id="compassBeaconCheckboxes">

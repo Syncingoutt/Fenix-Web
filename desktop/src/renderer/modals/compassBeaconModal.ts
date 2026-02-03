@@ -95,12 +95,10 @@ export function showCompassBeaconSelection(): void {
   const lastSelectionJson = localStorage.getItem('lastCompassBeaconSelection');
   if (helperActions) {
     if (lastSelectionJson) {
-      helperActions.style.display = 'flex';
+      helperActions.style.display = 'block';
     } else {
       helperActions.style.display = 'none';
     }
-  } else {
-    console.warn('compassBeaconHelperActions element not found');
   }
   
   // Initialize groups
@@ -157,27 +155,6 @@ export function showCompassBeaconSelection(): void {
     });
   };
   
-  // Helper: Update confirm button visibility
-  const updateConfirmButtonVisibility = (): void => {
-    const confirmBtn = document.getElementById('compassBeaconSelectionConfirm');
-    if (confirmBtn) {
-      const hasOtherSelections = Array.from(checkedItemsSet).some(id => id !== '5028');
-      if (hasOtherSelections) {
-        confirmBtn.style.display = 'block';
-        setTimeout(() => {
-          confirmBtn.classList.add('visible');
-        }, 10);
-      } else {
-        confirmBtn.classList.remove('visible');
-        setTimeout(() => {
-          if (!confirmBtn.classList.contains('visible')) {
-            confirmBtn.style.display = 'none';
-          }
-        }, 300);
-      }
-    }
-  };
-  
   // Helper: Update checked state when checkbox changes
   const handleCheckboxChange = (baseId: string, checked: boolean): void => {
     if (checked) {
@@ -185,7 +162,6 @@ export function showCompassBeaconSelection(): void {
     } else {
       checkedItemsSet.delete(baseId);
     }
-    updateConfirmButtonVisibility();
   };
   
   // Helper: Create checkbox element for an item
@@ -209,8 +185,7 @@ export function showCompassBeaconSelection(): void {
     checkboxLabel.className = 'checkbox-label';
     
     const icon = document.createElement('img');
-    const baseUrl = import.meta.env.BASE_URL || '/';
-    icon.src = `${baseUrl}assets/${item.baseId}.webp`;
+    icon.src = `../../assets/${item.baseId}.webp`;
     icon.alt = item.itemName;
     icon.className = 'checkbox-icon';
     icon.onerror = () => { icon.style.display = 'none'; };
@@ -308,8 +283,7 @@ export function showCompassBeaconSelection(): void {
     clearBtn.onclick = () => {
       checkedItemsSet.clear();
       checkedItemsSet.add('5028');
-      updateConfirmButtonVisibility();
-      
+
       const currentQuery = searchInput?.value.trim() || '';
       if (currentQuery === '') {
         renderItems(allItemGroups, true);
@@ -319,9 +293,6 @@ export function showCompassBeaconSelection(): void {
       }
     };
   }
-
-  // Get restore checkbox element
-  const restoreCheckbox = document.getElementById('compassBeaconRestore') as HTMLInputElement;
 
   // Helper function to restore last selection
   const restoreLastSelection = (): void => {
@@ -347,7 +318,6 @@ export function showCompassBeaconSelection(): void {
         if (restoreCheckbox) {
           restoreCheckbox.checked = true;
         }
-        updateConfirmButtonVisibility();
       } catch (e) {
         console.error('Failed to restore last selection:', e);
         if (restoreCheckbox) {
@@ -358,6 +328,7 @@ export function showCompassBeaconSelection(): void {
   };
 
   // Add Restore Last Selection handler
+  const restoreCheckbox = document.getElementById('compassBeaconRestore') as HTMLInputElement;
   if (restoreCheckbox) {
     restoreCheckbox.addEventListener('change', () => {
       if (restoreCheckbox.checked) {
@@ -374,7 +345,6 @@ export function showCompassBeaconSelection(): void {
           const filteredGroups = allItemGroups.map(group => filterGroupItems(group, currentQuery));
           renderItems(filteredGroups, true);
         }
-        updateConfirmButtonVisibility();
       }
     });
 
@@ -384,8 +354,7 @@ export function showCompassBeaconSelection(): void {
       restoreLastSelection();
     }
   }
-  
-  updateConfirmButtonVisibility();
+
   modal.classList.add('active');
 }
 
@@ -427,7 +396,6 @@ export function handleCompassBeaconSelectionConfirm(): void {
   const selectionArray = Array.from(includedItems);
   localStorage.setItem('lastCompassBeaconSelection', JSON.stringify(selectionArray));
   
-  console.log(`✅ Including ${includedItems.size} compasses/beacons in hourly calculation`);
   
   hideCompassBeaconSelection();
   actuallyStartHourlyTracking();
