@@ -2,8 +2,8 @@
 
 import { webAPI } from '../webAPI.js';
 
-const settingsButton = document.getElementById('settingsButton') as HTMLElement;
-const settingsMenu = document.getElementById('settingsMenu') as HTMLElement;
+const myAccountButton = document.getElementById('myAccountButton') as HTMLElement;
+const myAccountMenu = document.getElementById('myAccountMenu') as HTMLElement;
 const appVersion = document.getElementById('appVersion') as HTMLElement;
 
 let settingsMenuOpen = false;
@@ -17,12 +17,19 @@ export function initSettingsManager(): { open: boolean } {
   });
 
   // Toggle settings menu
-  if (settingsButton) {
-    settingsButton.addEventListener('click', (e) => {
+  if (myAccountButton) {
+    myAccountButton.addEventListener('click', (e) => {
       e.stopPropagation();
       settingsMenuOpen = !settingsMenuOpen;
-      if (settingsMenu) {
-        settingsMenu.style.display = settingsMenuOpen ? 'block' : 'none';
+      if (myAccountMenu) {
+        myAccountMenu.style.display = settingsMenuOpen ? 'block' : 'none';
+      }
+      if (myAccountButton) {
+        if (settingsMenuOpen) {
+          myAccountButton.classList.add('active');
+        } else {
+          myAccountButton.classList.remove('active');
+        }
       }
     });
   }
@@ -31,15 +38,18 @@ export function initSettingsManager(): { open: boolean } {
   document.addEventListener('click', () => {
     if (settingsMenuOpen) {
       settingsMenuOpen = false;
-      if (settingsMenu) {
-        settingsMenu.style.display = 'none';
+      if (myAccountMenu) {
+        myAccountMenu.style.display = 'none';
+      }
+      if (myAccountButton) {
+        myAccountButton.classList.remove('active');
       }
     }
   });
 
   // Prevent menu from closing when clicking inside it
-  if (settingsMenu) {
-    settingsMenu.addEventListener('click', (e) => {
+  if (myAccountMenu) {
+    myAccountMenu.addEventListener('click', (e) => {
       e.stopPropagation();
     });
   }

@@ -42,9 +42,13 @@ export function initSettingsModal(
   if (openSettingsBtn) {
     openSettingsBtn.addEventListener('click', async () => {
       settingsMenuState.open = false;
-      const settingsMenu = document.getElementById('settingsMenu');
-      if (settingsMenu) {
-        settingsMenu.style.display = 'none';
+      const myAccountMenu = document.getElementById('myAccountMenu');
+      const myAccountButton = document.getElementById('myAccountButton');
+      if (myAccountMenu) {
+        myAccountMenu.style.display = 'none';
+      }
+      if (myAccountButton) {
+        myAccountButton.classList.remove('active');
       }
       
       // Load current settings
