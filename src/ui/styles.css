@@ -126,10 +126,10 @@ body::-webkit-scrollbar {
 }
 
 img:not(.header-logo-pic,.setup-guide-image) {
-  width: calc(38px * var(--scale));
-  height: calc(38px * var(--scale));
-  min-width: calc(38px * var(--scale));
-  min-height: calc(38px * var(--scale));
+  width: calc(42px * var(--scale));
+  height: calc(42px * var(--scale));
+  min-width: calc(42px * var(--scale));
+  min-height: calc(42px * var(--scale));
   max-width: none;
   max-height: none;
 }
@@ -1043,12 +1043,6 @@ img:not(.header-logo-pic,.setup-guide-image) {
   font-size: calc(var(--text-small) * var(--text-scale));
 }
 
-.item-name .page-label {
-  color: white;
-  opacity: 0.5;
-  font-size: calc(var(--text-xsmall) * var(--text-scale));
-  margin-top: calc(4px * var(--scale));
-}
 .item-name .item-label, .item-price, .price-single, .price-total, .item-single, .item-total, .item-quantity, .item-name, #wealthHourly, #wealthValue, .maintext {
   font-size: calc(var(--text-medium) * var(--text-scale));
 }
