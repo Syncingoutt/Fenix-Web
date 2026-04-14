@@ -3,6 +3,7 @@ dist/
 release/
 release_assets/
 desktop/
+fenix_app/
 price_cache.json
 .DS_Store
 Thumbs.db
