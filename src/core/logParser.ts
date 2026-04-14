@@ -58,6 +58,11 @@ function extractBaseId(fullId: string): string {
   return fullId.split('_')[0];
 }
 
+/** Treat all stash/inventory tab pages (100+) as tracked inventory pages. */
+function isTrackedBagPage(pageId: number | null): boolean {
+  return pageId !== null && pageId >= 100;
+}
+
 /**
  * Parse a BagMgr@:InitBagData line
  * Format: BagMgr@:InitBagData PageId = 102 SlotId = 1 ConfigBaseId = 100300 Num = 320
@@ -68,8 +73,7 @@ function parseInitBagDataLine(line: string): ParsedLogEntry | null {
   const pageMatch = line.match(/PageId\s*=\s*(\d+)/);
   const pageId = pageMatch ? parseInt(pageMatch[1]) : null;
   
-  // Only process PageId 102 and 103
-  if (pageId !== 102 && pageId !== 103) {
+  if (!isTrackedBagPage(pageId)) {
     return null;
   }
 
@@ -109,26 +113,32 @@ export function parseLogLine(line: string): ParsedLogEntry | null {
   const fullId = idMatch[1];
   const baseId = extractBaseId(fullId);
 
-  const bagMatch = line.match(/BagNum=(\d+)/);
-  if (!bagMatch) return null;
-  const bagNum = parseInt(bagMatch[1]);
+  let action = 'Unknown';
+  if (line.includes('ItemChange@ Add')) action = 'Add';
+  else if (line.includes('ItemChange@ Update')) action = 'Update';
+  else if (line.includes('ItemChange@ Remove')) action = 'Remove';
+  else if (line.includes('ItemChange@ Delete')) action = 'Delete';
 
-  const pageMatch = line.match(/PageId=(\d+)/);
+  // Delete entries may not include BagNum
+  const bagMatch = line.match(/BagNum=(\d+)/);
+  let bagNum = 0;
+  if (bagMatch) {
+    bagNum = parseInt(bagMatch[1]);
+  } else if (action !== 'Delete') {
+    return null;
+  }
+
+  // Match both "PageId=" and "in PageId=" formats
+  const pageMatch = line.match(/in\s+PageId\s*=\s*(\d+)/) || line.match(/PageId\s*=\s*(\d+)/);
   const pageId = pageMatch ? parseInt(pageMatch[1]) : null;
   
-  if (pageId !== 102 && pageId !== 103) {
+  if (!isTrackedBagPage(pageId)) {
     return null;
   }
 
   const timestampMatch = line.match(/\[([\d\.\-:]+)\]/);
   const timestamp = timestampMatch ? timestampMatch[1] : 'unknown';
-
-  let action = 'Unknown';
-  if (line.includes('ItemChange@ Add')) action = 'Add';
-  else if (line.includes('ItemChange@ Update')) action = 'Update';
-  else if (line.includes('ItemChange@ Remove')) action = 'Remove';
-
-  const slotMatch = line.match(/SlotId=(\d+)/);
+  const slotMatch = line.match(/SlotId\s*=\s*(\d+)/);
   const slotId = slotMatch ? parseInt(slotMatch[1]) : null;
 
   return {
@@ -164,7 +174,7 @@ export function parseLogContent(logContent: string): ParsedLogEntry[] {
     }
   }
 
-  // If we found a ResetItemsLayout event, capture BagMgr@:InitBagData entries for both pages
+  // If we found a ResetItemsLayout event, capture BagMgr@:InitBagData entries for tracked pages
   // AND also capture any ItemChange entries (like PickItems) that come after
   if (lastResetItemsLayoutStart !== -1 && lastResetItemsLayoutEnd !== -1) {
     const entries: ParsedLogEntry[] = [];
@@ -172,10 +182,9 @@ export function parseLogContent(logContent: string): ParsedLogEntry[] {
     // Look for InitBagData entries after the ResetItemsLayout end
     // Search until we hit another ResetItemsLayout start, or reach end of file
     // Use a larger initial window (500 lines) to ensure we capture all InitBagData entries
-    // for pages 102 and 103, but continue searching if needed
+    // for tracked pages, but continue searching if needed
     const initialSearchEnd = Math.min(lastResetItemsLayoutEnd + 500, lines.length);
-    let foundInitBagData102 = false;
-    let foundInitBagData103 = false;
+    const foundTrackedInitPages = new Set<number>();
     
     // First pass: collect InitBagData entries within initial window
     for (let i = lastResetItemsLayoutEnd; i < initialSearchEnd; i++) {
@@ -186,7 +195,7 @@ export function parseLogContent(logContent: string): ParsedLogEntry[] {
         break;
       }
       
-      // Parse InitBagData entries for PageId 102 and 103
+      // Parse InitBagData entries for tracked pages
       const parsed = parseInitBagDataLine(line);
       if (parsed) {
         // Check if we already have this slot (avoid duplicates)
@@ -204,61 +213,49 @@ export function parseLogContent(logContent: string): ParsedLogEntry[] {
           entries.push(parsed);
         }
         
-        if (parsed.pageId === 102) foundInitBagData102 = true;
-        if (parsed.pageId === 103) foundInitBagData103 = true;
+        if (parsed.pageId !== null) foundTrackedInitPages.add(parsed.pageId);
       }
     }
     
-    // If we didn't find InitBagData for both pages in initial window, continue searching
-    // This handles cases where there are many items or other log entries between InitBagData lines
-    if (!foundInitBagData102 || !foundInitBagData103) {
-      for (let i = initialSearchEnd; i < lines.length; i++) {
-        const line = lines[i];
-        
-        // Stop if we hit another ResetItemsLayout start (new sort operation)
-        if (line.includes('ItemChange@ ProtoName=ResetItemsLayout start')) {
-          break;
+    // Continue scanning to catch all tracked pages and potential late InitBagData entries
+    for (let i = initialSearchEnd; i < lines.length; i++) {
+      const line = lines[i];
+
+      // Stop if we hit another ResetItemsLayout start (new sort operation)
+      if (line.includes('ItemChange@ ProtoName=ResetItemsLayout start')) {
+        break;
+      }
+
+      const parsed = parseInitBagDataLine(line);
+      if (parsed) {
+        const existingIndex = entries.findIndex(e => 
+          e.pageId === parsed.pageId && 
+          e.slotId === parsed.slotId && 
+          e.slotId !== null && 
+          parsed.slotId !== null
+        );
+
+        if (existingIndex >= 0) {
+          entries[existingIndex] = parsed;
+        } else {
+          entries.push(parsed);
         }
-        
-        // Parse InitBagData entries for PageId 102 and 103
-        const parsed = parseInitBagDataLine(line);
-        if (parsed) {
-          // Check if we already have this slot (avoid duplicates)
-          const existingIndex = entries.findIndex(e => 
-            e.pageId === parsed.pageId && 
-            e.slotId === parsed.slotId && 
-            e.slotId !== null && 
-            parsed.slotId !== null
-          );
-          
-          if (existingIndex >= 0) {
-            // Replace with newer entry (keep the latest)
-            entries[existingIndex] = parsed;
-          } else {
-            entries.push(parsed);
+        if (parsed.pageId !== null) foundTrackedInitPages.add(parsed.pageId);
+      }
+
+      // Once we've seen multiple tracked pages and no nearby InitBagData lines, stop scanning.
+      if (foundTrackedInitPages.size >= 2) {
+        let hasNearbyInit = false;
+        for (let j = i + 1; j < Math.min(i + 50, lines.length); j++) {
+          if (lines[j].includes('BagMgr@:InitBagData')) {
+            hasNearbyInit = true;
+            break;
           }
-          
-          if (parsed.pageId === 102) foundInitBagData102 = true;
-          if (parsed.pageId === 103) foundInitBagData103 = true;
-        }
-        
-        // Stop if we've found InitBagData for both pages and no more relevant entries likely
-        // Continue a bit more to catch any stragglers (check 50 more lines after finding both)
-        if (foundInitBagData102 && foundInitBagData103) {
-          let checkMore = false;
-          for (let j = i + 1; j < Math.min(i + 50, lines.length); j++) {
-            if (lines[j].includes('BagMgr@:InitBagData')) {
-              checkMore = true;
-              break;
-            }
-            if (lines[j].includes('ItemChange@ ProtoName=ResetItemsLayout start')) {
-              break;
-            }
-          }
-          if (!checkMore) {
+          if (lines[j].includes('ItemChange@ ProtoName=ResetItemsLayout start')) {
             break;
           }
         }
+        if (!hasNearbyInit) break;
       }
     }
     
@@ -272,7 +269,7 @@ export function parseLogContent(logContent: string): ParsedLogEntry[] {
         break;
       }
       
-      // Parse ItemChange entries (Add, Update, Remove) that come after the sort
+      // Parse ItemChange entries (Add, Update, Remove, Delete) that come after the sort
       if (line.includes('ItemChange@') && line.includes('Id=')) {
         const parsed = parseLogLine(line);
         if (parsed) {
@@ -320,25 +317,24 @@ export function parseLogContent(logContent: string): ParsedLogEntry[] {
     // If no entries found, fall through to normal processing
   }
 
-  // Fall back to normal processing (find last reset for each page)
-  let lastReset102 = -1;
-  let lastReset103 = -1;
+  // Fall back to normal processing (find last reset for tracked pages)
+  const lastResetsByPage = new Map<number, number>();
 
   for (let i = lines.length - 1; i >= 0; i--) {
     const line = lines[i];
-    if (line.includes('ItemChange@ Reset PageId=102') && lastReset102 === -1) {
-      lastReset102 = i;
+    const resetMatch = line.match(/ItemChange@\s+Reset\s+PageId=(\d+)/);
+    if (!resetMatch) continue;
+    const pageId = parseInt(resetMatch[1]);
+    if (!isTrackedBagPage(pageId)) continue;
+    if (!lastResetsByPage.has(pageId)) {
+      lastResetsByPage.set(pageId, i);
     }
-    if (line.includes('ItemChange@ Reset PageId=103') && lastReset103 === -1) {
-      lastReset103 = i;
-    }
-    if (lastReset102 !== -1 && lastReset103 !== -1) break;
   }
 
-  const startIndex = Math.min(
-    lastReset102 === -1 ? Infinity : lastReset102,
-    lastReset103 === -1 ? Infinity : lastReset103
-  );
+  let startIndex = Infinity;
+  lastResetsByPage.forEach((value) => {
+    if (value < startIndex) startIndex = value;
+  });
 
   const relevantLines = startIndex === Infinity ? lines : lines.slice(startIndex);
 

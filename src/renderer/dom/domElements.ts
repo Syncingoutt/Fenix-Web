@@ -25,9 +25,9 @@ export function initUIState(): void {
   stopHourlyBtn.style.display = 'none';
   pauseHourlyBtn.style.display = 'none';
   resumeHourlyBtn.style.display = 'none';
-  hourlyControls.classList.add('active');
-  realtimeBtn.classList.remove('active');
-  hourlyBtn.classList.add('active');
-  timerEl.style.display = 'none';
-  resetRealtimeBtn.style.display = 'none';
+  hourlyControls.classList.remove('active');
+  realtimeBtn.classList.add('active');
+  hourlyBtn.classList.remove('active');
+  timerEl.style.display = 'block';
+  resetRealtimeBtn.style.display = 'block';
 }

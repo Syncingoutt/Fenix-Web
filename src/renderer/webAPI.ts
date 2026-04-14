@@ -35,6 +35,7 @@ export async function initializeWebAPI(): Promise<void> {
     if (inventoryManager) {
       inventoryManager.applyPriceCache(cache);
       await savePriceCache(inventoryManager.getPriceCacheAsObject());
+      localStorage.setItem(INVENTORY_CACHE_KEY, JSON.stringify(inventoryManager.getInventory()));
       notifyInventoryUpdate();
     }
   });
@@ -47,6 +48,15 @@ export async function initializeWebAPI(): Promise<void> {
   // Initialize inventory manager
   inventoryManager = new InventoryManager(itemDatabase, priceCache);
 
+  // Ensure startup uses the freshest cloud prices before first render.
+  if (priceSyncService && inventoryManager) {
+    const startupCloudCache = await priceSyncService.syncPrices({ forceFull: true });
+    if (Object.keys(startupCloudCache).length > 0) {
+      inventoryManager.applyPriceCache(startupCloudCache);
+      await savePriceCache(inventoryManager.getPriceCacheAsObject());
+    }
+  }
+
   // Restore cached inventory (if any)
   const cached = localStorage.getItem(INVENTORY_CACHE_KEY);
   if (cached && inventoryManager) {
@@ -54,6 +64,8 @@ export async function initializeWebAPI(): Promise<void> {
       const parsed = JSON.parse(cached) as InventoryItem[];
       if (Array.isArray(parsed)) {
         inventoryManager.hydrateInventory(parsed);
+        // Keep restored quantities but refresh values from the latest cached prices.
+        inventoryManager.applyPriceCache(inventoryManager.getPriceCacheAsObject());
         notifyInventoryUpdate();
       }
     } catch (error) {
@@ -69,6 +81,7 @@ export async function initializeWebAPI(): Promise<void> {
       if (inventoryManager) {
         inventoryManager.applyPriceCache(cloudCache);
         await savePriceCache(inventoryManager.getPriceCacheAsObject());
+        localStorage.setItem(INVENTORY_CACHE_KEY, JSON.stringify(inventoryManager.getInventory()));
         notifyInventoryUpdate();
       }
     }

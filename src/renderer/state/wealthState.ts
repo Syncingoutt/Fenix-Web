@@ -3,7 +3,7 @@
 import { WealthMode, HourlyBucket } from '../types.js';
 
 // Wealth mode
-let wealthMode: WealthMode = 'hourly';
+let wealthMode: WealthMode = 'realtime';
 
 // History data
 let realtimeHistory: { time: number; value: number }[] = [];

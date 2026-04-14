@@ -151,7 +151,7 @@
             <div class="segmented">
               <div class="segmented-active-bg"></div>
               <label id="hourlyBtn">
-                <input type="radio" name="mode" value="first" checked>
+                <input type="radio" name="mode" value="first">
                 <div class="button-label">
                   <svg class="check-icon" width="13" height="10" viewBox="0 0 13 10" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M4.275 9.01875L0 4.74375L1.06875 3.675L4.275 6.88125L11.1563 0L12.225 1.06875L4.275 9.01875Z" fill="white"/>
@@ -161,7 +161,7 @@
               </label>
 
               <label id="realtimeBtn">
-                <input type="radio" name="mode" value="second">
+                <input type="radio" name="mode" value="second" checked>
                 <div class="button-label">
                   <svg class="check-icon" width="13" height="10" viewBox="0 0 13 10" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M4.275 9.01875L0 4.74375L1.06875 3.675L4.275 6.88125L11.1563 0L12.225 1.06875L4.275 9.01875Z" fill="white"/>
@@ -344,6 +344,7 @@
                 <button class="prices-sidebar-item" data-group="ember"><img src="../../assets/ember.webp">Ember</button>
                 <button class="prices-sidebar-item" data-group="cube"><img src="../../assets/cube.webp">Cube</button>
                 <button class="prices-sidebar-item" data-group="aeterna"><img src="../../assets/aeterna.webp">Aeterna</button>
+                <button class="prices-sidebar-item" data-group="arcana"><img src="../../assets/arcana.webp">Arcana</button>
                 <button class="prices-sidebar-item" data-group="surge"><img src="../../assets/surge.webp">Surge</button>
                 <button class="prices-sidebar-item" data-group="blacksail"><img src="../../assets/blacksail.webp">Blacksail</button>
                 <button class="prices-sidebar-item" data-group="dream"><img src="../../assets/dream.webp">Dream</button>
@@ -685,11 +686,10 @@
           const label = checkedInput.closest('label');
           const segmented = activeBg.parentElement;
           if (!label || !segmented) return;
-          const segmentedRect = segmented.getBoundingClientRect();
-          const labelRect = label.getBoundingClientRect();
-          const left = labelRect.left - segmentedRect.left;
+          const left = label.offsetLeft;
+          const width = label.clientWidth;
           activeBg.style.transform = `translateX(${left}px)`;
-          activeBg.style.width = `${labelRect.width}px`;
+          activeBg.style.width = `${width}px`;
         }
       }
       
@@ -702,8 +702,8 @@
 
       const segmentedInputs = document.querySelectorAll('.segmented input');
       if (segmentedInputs.length >= 2) {
-        segmentedInputs[0].checked = true;
-        segmentedInputs[1].checked = false;
+        segmentedInputs[0].checked = false;
+        segmentedInputs[1].checked = true;
         updateSegmentedTransform();
       }
 
