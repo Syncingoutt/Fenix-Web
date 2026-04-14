@@ -41,6 +41,11 @@ export function renderUsageSection(): void {
       // Calculate net usage for display: (startQty - currentQty)
       // Positive means used, negative means bought
       const netUsage = startQty - currentQty;
+
+      // Only show items that were actually consumed this session.
+      if (netUsage <= 0) {
+        continue;
+      }
       
       if (!item) {
         // If item not in inventory, try to get from database
@@ -56,7 +61,6 @@ export function renderUsageSection(): void {
         continue;
       }
       
-      // Always include tracked items, even if netUsage is 0
       // Use current price (may have been updated during session)
       usageItems.push({
         baseId,

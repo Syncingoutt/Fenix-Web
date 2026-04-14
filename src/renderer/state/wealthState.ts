@@ -18,7 +18,6 @@ let hourlyPaused = false;
 
 // Compass/beacon tracking
 let includedItems: Set<string> = new Set(); // baseId -> track usage for this item
-let compassBeaconSelectionState: Set<string> | null = null;
 let previousQuantities: Map<string, number> = new Map(); // baseId -> previous quantity
 let hourlyUsage: Map<string, number> = new Map(); // baseId -> quantity used this hour
 let hourlyPurchases: Map<string, number> = new Map(); // baseId -> quantity purchased this hour
@@ -107,14 +106,6 @@ export function getIncludedItems(): Set<string> {
 
 export function setIncludedItems(items: Set<string>): void {
   includedItems = items;
-}
-
-export function getCompassBeaconSelectionState(): Set<string> | null {
-  return compassBeaconSelectionState;
-}
-
-export function setCompassBeaconSelectionState(state: Set<string> | null): void {
-  compassBeaconSelectionState = state;
 }
 
 export function getPreviousQuantities(): Map<string, number> {

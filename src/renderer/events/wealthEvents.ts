@@ -1,6 +1,6 @@
 // Wealth tracking event handlers
 
-import { setWealthMode, getWealthMode, getIsHourlyActive, getRealtimeElapsedSeconds, getHourlyPaused, getIncludedItems } from '../state/wealthState.js';
+import { setWealthMode, getWealthMode, getIsHourlyActive, getRealtimeElapsedSeconds, getHourlyPaused } from '../state/wealthState.js';
 import { formatTime } from '../utils/formatting.js';
 import {
   realtimeBtn,
@@ -24,12 +24,6 @@ let updateHourlyWealth: () => void;
 let renderInventory: () => void;
 let renderBreakdown: (renderInventoryFn: () => void) => void;
 let updateGraph: () => void;
-let showCompassBeaconPrompt: () => void;
-let hideCompassBeaconPrompt: () => void;
-let showCompassBeaconSelection: () => void;
-let hideCompassBeaconSelection: () => void;
-let handleCompassBeaconSelectionConfirm: () => void;
-let actuallyStartHourlyTracking: () => void;
 let closeBreakdownModal: () => void;
 
 export function initWealthEvents(
@@ -43,12 +37,6 @@ export function initWealthEvents(
   inventoryRenderer: () => void,
   breakdownRenderer: (renderInventoryFn: () => void) => void,
   graphUpdater: () => void,
-  compassBeaconPromptFn: () => void,
-  compassBeaconPromptHideFn: () => void,
-  compassBeaconSelectionFn: () => void,
-  compassBeaconSelectionHideFn: () => void,
-  compassBeaconConfirmFn: () => void,
-  actuallyStartHourlyFn: () => void,
   breakdownModalCloseFn: () => void
 ): void {
   startHourlyTracking = startHourlyFn;
@@ -61,12 +49,6 @@ export function initWealthEvents(
   renderInventory = inventoryRenderer;
   renderBreakdown = breakdownRenderer;
   updateGraph = graphUpdater;
-  showCompassBeaconPrompt = compassBeaconPromptFn;
-  hideCompassBeaconPrompt = compassBeaconPromptHideFn;
-  showCompassBeaconSelection = compassBeaconSelectionFn;
-  hideCompassBeaconSelection = compassBeaconSelectionHideFn;
-  handleCompassBeaconSelectionConfirm = compassBeaconConfirmFn;
-  actuallyStartHourlyTracking = actuallyStartHourlyFn;
   closeBreakdownModal = breakdownModalCloseFn;
   
   // Mode switching
@@ -120,45 +102,6 @@ export function initWealthEvents(
   pauseHourlyBtn.addEventListener('click', pauseHourlyTracking);
   resumeHourlyBtn.addEventListener('click', resumeHourlyTracking);
   resetRealtimeBtn.addEventListener('click', resetRealtimeTracking);
-  
-  // Compass/Beacon prompt modal event listeners
-  document.getElementById('compassBeaconPromptNo')?.addEventListener('click', () => {
-    const includedItems = getIncludedItems();
-    includedItems.clear();
-    hideCompassBeaconPrompt();
-    actuallyStartHourlyTracking();
-  });
-  
-  document.getElementById('compassBeaconPromptYes')?.addEventListener('click', () => {
-    hideCompassBeaconPrompt();
-    showCompassBeaconSelection();
-  });
-  
-  // Compass/Beacon selection modal event listeners
-  document.getElementById('compassBeaconSelectionClose')?.addEventListener('click', () => {
-    const includedItems = getIncludedItems();
-    includedItems.clear();
-    hideCompassBeaconSelection();
-  });
-  
-  document.getElementById('compassBeaconSelectionConfirm')?.addEventListener('click', handleCompassBeaconSelectionConfirm);
-  
-  // Close modals when clicking outside
-  document.getElementById('compassBeaconPromptModal')?.addEventListener('click', (e) => {
-    if (e.target === document.getElementById('compassBeaconPromptModal')) {
-      const includedItems = getIncludedItems();
-      includedItems.clear();
-      hideCompassBeaconPrompt();
-    }
-  });
-  
-  document.getElementById('compassBeaconSelectionModal')?.addEventListener('click', (e) => {
-    if (e.target === document.getElementById('compassBeaconSelectionModal')) {
-      const includedItems = getIncludedItems();
-      includedItems.clear();
-      hideCompassBeaconSelection();
-    }
-  });
   
   // Breakdown modal close button
   document.getElementById('closeBreakdown')?.addEventListener('click', closeBreakdownModal);
