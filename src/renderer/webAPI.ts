@@ -1,6 +1,6 @@
 // Web API adapter - replaces Electron IPC for web version
 
-import { InventoryItem, ItemDatabase, PriceCache } from './types.js';
+import { InventoryItem, ItemDatabase, PriceCache, PriceHistoryPoint, PriceHistoryByItem } from './types.js';
 import { InventoryManager } from '../core/inventory.js';
 import { loadItemDatabase, loadPriceCache, savePriceCache } from '../core/database.js';
 import { parseLogContent, getSettings, saveSettings } from '../core/logParser.js';
@@ -155,6 +155,21 @@ export const webAPI = {
   async getPriceCache(): Promise<PriceCache> {
     if (!inventoryManager) return {};
     return inventoryManager.getPriceCacheAsObject();
+  },
+
+  async getPriceHistory(payload: { baseId: string; leagueId?: string; maxDays?: number }): Promise<PriceHistoryPoint[]> {
+    if (!priceSyncService) return [];
+    const baseId = payload?.baseId ?? '';
+    const leagueId = payload?.leagueId;
+    const maxDays = payload?.maxDays;
+    return priceSyncService.getPriceHistory({ baseId, leagueId, maxDays });
+  },
+
+  async getPriceHistoryBatch(payload?: { leagueId?: string; maxDays?: number }): Promise<PriceHistoryByItem> {
+    if (!priceSyncService) return {};
+    const leagueId = payload?.leagueId;
+    const maxDays = payload?.maxDays;
+    return priceSyncService.getPriceHistoryBatch({ leagueId, maxDays });
   },
 
   getPriceCacheStatus(): { lastUpdated: number | null; lastError: string | null } {
