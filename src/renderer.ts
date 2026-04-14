@@ -6,14 +6,14 @@ import { webAPI, initializeWebAPI, handleLogFileUpload } from './renderer/webAPI
 
 // State
 import { setCurrentItems, setItemDatabase, getCurrentItems } from './renderer/state/inventoryState.js';
-import { getWealthMode, getIsHourlyActive, getHourlyPaused, getRealtimeElapsedSeconds, getHourlyElapsedSeconds, setRealtimeElapsedSeconds, setHourlyElapsedSeconds, getIsRealtimeInitialized, setIsRealtimeInitialized, getRealtimeStartValue, getHourlyHistory, setHourlyHistory } from './renderer/state/wealthState.js';
+import { getWealthMode, getIsHourlyActive, getHourlyPaused, setRealtimeElapsedSeconds, setHourlyElapsedSeconds, getIsRealtimeInitialized, setIsRealtimeInitialized, getHourlyHistory, setHourlyHistory } from './renderer/state/wealthState.js';
 import { setIncludeTax } from './renderer/state/settingsState.js';
 
 // Utils
 import { formatTime } from './renderer/utils/formatting.js';
 
 // Wealth
-import { getCurrentTotalValue, getHourlyWealthGain } from './renderer/wealth/wealthCalculations.js';
+import { getHourlyWealthGain } from './renderer/wealth/wealthCalculations.js';
 import { initRealtimeTracker, initRealtimeTracking, updateRealtimeWealth, resetRealtimeTracking, initRealtimeTimer as initRealtimeTimerFn } from './renderer/wealth/realtimeTracker.js';
 import { initHourlyTracker, startHourlyTracking, stopHourlyTracking, pauseHourlyTracking, resumeHourlyTracking, actuallyStartHourlyTracking, trackCompassBeaconUsage, updatePreviousQuantities, updateHourlyWealth, captureHourlyBucket } from './renderer/wealth/hourlyTracker.js';
 
@@ -46,39 +46,6 @@ import { initUIEvents } from './renderer/events/uiEvents.js';
 import { initPrices } from './renderer/prices/pricesRenderer.js';
 
 declare const Chart: any;
-
-/**
- * Update overlay widget with current data
- */
-function updateOverlayWidgetData(): void {
-  const wealthMode = getWealthMode();
-  const isHourlyActive = getIsHourlyActive();
-  const hourlyPaused = getHourlyPaused();
-  const isHourlyMode = wealthMode === 'hourly' && isHourlyActive;
-  
-  let duration: number;
-  let hourly: number;
-  let total: number;
-
-  if (isHourlyMode) {
-    // Hourly mode - use hourly values
-    const gainedValue = getHourlyWealthGain();
-    const elapsedTimeHours = getHourlyElapsedSeconds() / 3600;
-    duration = getHourlyElapsedSeconds();
-    hourly = elapsedTimeHours > 0 ? gainedValue / elapsedTimeHours : 0;
-    total = gainedValue;
-  } else {
-    // Realtime mode - use realtime values
-    const currentValue = getCurrentTotalValue();
-    const elapsedTimeHours = getRealtimeElapsedSeconds() / 3600;
-    duration = getRealtimeElapsedSeconds();
-    const startValue = getRealtimeStartValue();
-    hourly = elapsedTimeHours > 0 ? (currentValue - startValue) / elapsedTimeHours : 0;
-    total = currentValue;
-  }
-
-  webAPI.updateOverlayWidget({ duration, hourly, total, isHourlyMode, isPaused: hourlyPaused });
-}
 
 /**
  * Update stats (wealth values and breakdown)
@@ -157,7 +124,6 @@ async function initialize(): Promise<void> {
     wealthValueEl,
     wealthHourlyEl,
     timerEl,
-    updateOverlayWidgetData,
     pushRealtimePoint
   );
   
@@ -169,7 +135,6 @@ async function initialize(): Promise<void> {
     stopHourlyBtn,
     pauseHourlyBtn,
     resumeHourlyBtn,
-    updateOverlayWidgetData,
     showCompassBeaconPrompt,
     showBreakdownModal,
     renderInventory,
@@ -190,7 +155,6 @@ async function initialize(): Promise<void> {
     renderInventory,
     () => renderBreakdown(renderInventory),
     updateGraph,
-    updateOverlayWidgetData,
     showCompassBeaconPrompt,
     hideCompassBeaconPrompt,
     showCompassBeaconSelection,

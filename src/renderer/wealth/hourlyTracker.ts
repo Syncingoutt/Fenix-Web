@@ -41,7 +41,6 @@ let startHourlyBtn: HTMLButtonElement;
 let stopHourlyBtn: HTMLButtonElement;
 let pauseHourlyBtn: HTMLButtonElement;
 let resumeHourlyBtn: HTMLButtonElement;
-let updateOverlayWidgetData: () => void;
 let showCompassBeaconPrompt: () => void;
 let showBreakdownModal: () => void;
 let renderInventory: () => void;
@@ -55,7 +54,6 @@ export function initHourlyTracker(
   stopBtn: HTMLButtonElement,
   pauseBtn: HTMLButtonElement,
   resumeBtn: HTMLButtonElement,
-  overlayWidgetUpdater: () => void,
   compassBeaconPromptFn: () => void,
   breakdownModalFn: () => void,
   inventoryRenderer: () => void,
@@ -68,7 +66,6 @@ export function initHourlyTracker(
   stopHourlyBtn = stopBtn;
   pauseHourlyBtn = pauseBtn;
   resumeHourlyBtn = resumeBtn;
-  updateOverlayWidgetData = overlayWidgetUpdater;
   showCompassBeaconPrompt = compassBeaconPromptFn;
   showBreakdownModal = breakdownModalFn;
   renderInventory = inventoryRenderer;
@@ -259,8 +256,6 @@ export function pauseHourlyTracking(): void {
   pauseHourlyBtn.style.display = 'none';
   resumeHourlyBtn.style.display = 'inline-block';
   
-  // Update overlay widget immediately
-  updateOverlayWidgetData();
 }
 
 /**
@@ -276,8 +271,6 @@ export function resumeHourlyTracking(): void {
   pauseHourlyBtn.style.display = 'inline-block';
   resumeHourlyBtn.style.display = 'none';
   
-  // Update overlay widget immediately
-  updateOverlayWidgetData();
 }
 
 /**
@@ -326,8 +319,6 @@ export function stopHourlyTracking(): void {
   renderInventory();
   renderBreakdown();
   
-  // Update overlay widget with realtime data since hourly mode ended
-  updateOverlayWidgetData();
 }
 
 /**
@@ -344,6 +335,4 @@ export function updateHourlyWealth(): void {
     wealthHourlyEl.textContent = rate.toFixed(2);
   }
   
-  // Update overlay widget with current data
-  updateOverlayWidgetData();
 }

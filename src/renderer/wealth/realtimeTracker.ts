@@ -21,20 +21,17 @@ import { webAPI } from '../webAPI.js';
 let wealthValueEl: HTMLElement;
 let wealthHourlyEl: HTMLElement;
 let timerEl: HTMLElement;
-let updateOverlayWidgetData: () => void;
 let pushRealtimePoint: (value: number) => void;
 
 export function initRealtimeTracker(
   wealthValueElement: HTMLElement,
   wealthHourlyElement: HTMLElement,
   timerElement: HTMLElement,
-  overlayWidgetUpdater: () => void,
   pushPointFn: (value: number) => void
 ): void {
   wealthValueEl = wealthValueElement;
   wealthHourlyEl = wealthHourlyElement;
   timerEl = timerElement;
-  updateOverlayWidgetData = overlayWidgetUpdater;
   pushRealtimePoint = pushPointFn;
 }
 
@@ -92,8 +89,6 @@ export function updateRealtimeWealth(): void {
     wealthHourlyEl.textContent = rate.toFixed(2);
   }
   
-  // Update overlay widget with current data
-  updateOverlayWidgetData();
 }
 
 /**

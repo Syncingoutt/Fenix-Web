@@ -24,7 +24,6 @@ let updateHourlyWealth: () => void;
 let renderInventory: () => void;
 let renderBreakdown: (renderInventoryFn: () => void) => void;
 let updateGraph: () => void;
-let updateOverlayWidgetData: () => void;
 let showCompassBeaconPrompt: () => void;
 let hideCompassBeaconPrompt: () => void;
 let showCompassBeaconSelection: () => void;
@@ -44,7 +43,6 @@ export function initWealthEvents(
   inventoryRenderer: () => void,
   breakdownRenderer: (renderInventoryFn: () => void) => void,
   graphUpdater: () => void,
-  overlayWidgetUpdater: () => void,
   compassBeaconPromptFn: () => void,
   compassBeaconPromptHideFn: () => void,
   compassBeaconSelectionFn: () => void,
@@ -63,7 +61,6 @@ export function initWealthEvents(
   renderInventory = inventoryRenderer;
   renderBreakdown = breakdownRenderer;
   updateGraph = graphUpdater;
-  updateOverlayWidgetData = overlayWidgetUpdater;
   showCompassBeaconPrompt = compassBeaconPromptFn;
   hideCompassBeaconPrompt = compassBeaconPromptHideFn;
   showCompassBeaconSelection = compassBeaconSelectionFn;
@@ -116,8 +113,6 @@ export function initWealthEvents(
     }
     updateGraph();
     
-    // Update overlay widget with current mode
-    updateOverlayWidgetData();
   });
   
   startHourlyBtn.addEventListener('click', startHourlyTracking);

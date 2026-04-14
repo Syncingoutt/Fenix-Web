@@ -293,21 +293,7 @@ export const webAPI = {
     return false;
   },
 
-  toggleOverlayWidget(): void {
-    // No-op in web version
-  },
-
-  updateOverlayWidget(_data: { duration: number; hourly: number; total: number; isHourlyMode: boolean; isPaused: boolean }): void {
-    // No-op in web version
-  },
-
-  onWidgetPauseHourly(_callback: () => void): void {
-    // No-op in web version
-  },
-
-  onWidgetResumeHourly(_callback: () => void): void {
-    // No-op in web version
-  }
+  // Overlay widget APIs are desktop-only and omitted in web build.
 };
 
 // File upload handler
