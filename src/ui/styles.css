@@ -847,82 +847,6 @@ img:not(.header-logo-pic,.setup-guide-image) {
   color: #9ca3af;
 }
 
-/* Stale price indicators */
-.price-stale {
-  color: #DE5C0B; /* Orange - price over 3 days old */
-}
-
-.price-very-stale {
-  color: #982104; /* Darker orange/amber - price over 7 days old */
-}
-
-/* Price help icon and tooltip */
-.price-help-icon {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  margin-left: calc(4px * var(--scale));
-  color: #6b7280;
-  cursor: help;
-  vertical-align: middle;
-}
-
-.price-help-icon svg {
-  width: calc(12px * var(--scale));
-  height: calc(12px * var(--scale));
-  min-width: 10px;
-  min-height: 10px;
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
-}
-
-.price-help-icon:hover svg {
-  opacity: 1;
-  color: #9ca3af;
-}
-
-.price-help-tooltip {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--bg-shade);
-  border: 1px solid var(--border);
-  border-radius: calc(6px * var(--scale));
-  padding: calc(10px * var(--scale)) calc(12px * var(--scale));
-  font-size: calc(var(--text-small) * var(--scale));
-  line-height: 1.5;
-  white-space: nowrap;
-  color: #d1d5db;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.2s ease, visibility 0.2s ease;
-  z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  pointer-events: none;
-}
-
-.price-help-tooltip::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border: 6px solid transparent;
-}
-
-.price-help-tooltip strong {
-  display: block;
-  margin-bottom: calc(6px * var(--scale));
-  color: #fff;
-  font-size: calc(var(--text-xsmall) * var(--scale));
-}
-
-.price-help-icon:hover .price-help-tooltip {
-  opacity: 1;
-  visibility: visible;
-}
-
 /* ============================================
    SORTING ARROWS
    ============================================ */
@@ -3347,7 +3271,7 @@ body.overlay-widget {
 }
 
 .prices-price-value {
-  color: var(--text); /* White - fresh price (< 3 days) */
+  color: var(--text);
   font-size: calc(var(--text-small) * var(--text-scale));
   font-weight: 600;
 }
@@ -3355,14 +3279,6 @@ body.overlay-widget {
 .prices-price-value.no-price {
   color: var(--border);
   font-weight: 400;
-}
-
-.prices-price-value.price-stale {
-  color: #DE5C0B; /* Orange - stale (3-7 days) */
-}
-
-.prices-price-value.price-very-stale {
-  color: #982104; /* Dark orange - very stale (7+ days) */
 }
 
 /* Trend/Sparkline column */

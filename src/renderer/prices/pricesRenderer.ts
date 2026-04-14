@@ -6,7 +6,6 @@ import { webAPI } from '../webAPI.js';
 // Re-export for convenience
 export type { PriceCache, PriceCacheEntry } from '../types.js';
 import { FLAME_ELEMENTIUM_ID } from '../constants.js';
-import { getPriceAgeClass } from '../utils/formatting.js';
 
 interface PriceHistoryPoint {
   date: string;
@@ -203,9 +202,7 @@ function renderPriceRow(item: PriceItem, index: number): string {
   const priceFormatted = formatPrice(item.price);
   const hasPrice = item.price > 0;
   
-  // Apply price age class based on timestamp (same logic as inventory)
-  const priceAgeClass = hasPrice ? getPriceAgeClass(item.timestamp) : '';
-  const priceClass = hasPrice ? priceAgeClass : 'no-price';
+  const priceClass = hasPrice ? '' : 'no-price';
   const trendText = hasPrice ? `${item.trendPercent > 0 ? '+' : ''}${item.trendPercent.toFixed(0)}%` : '';
   
   return `
