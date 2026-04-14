@@ -31,6 +31,15 @@ export function initUIEvents(
       ctaBanner.classList.add('is-hidden');
       localStorage.setItem('fenix_cta_dismissed', 'true');
     });
+    // Fallback in case icon/button layering changes: close when clicking any close target in banner.
+    ctaBanner.addEventListener('click', (event) => {
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+      if (target.closest('#ctaCloseBtn') || target.closest('.cta-close')) {
+        ctaBanner.classList.add('is-hidden');
+        localStorage.setItem('fenix_cta_dismissed', 'true');
+      }
+    });
   }
 
   // File upload button handler
@@ -175,25 +184,44 @@ export function initUIEvents(
     if (setupGuideSpotlight) {
       const isSpotlightStep = index === setupGuideSteps.length - 1;
       setupGuideSpotlight.classList.toggle('active', isSpotlightStep);
+      document.body.classList.toggle('setup-guide-focus-active', isSpotlightStep);
       if (setupGuideModal) {
         setupGuideModal.classList.toggle('active', !isSpotlightStep);
       }
       if (isSpotlightStep) {
-        const logCtaActions = document.querySelector('.log-cta-actions') as HTMLElement | null;
-        if (logCtaActions) {
-          const ctaRect = logCtaActions.getBoundingClientRect();
-          const x = Math.max(0, ctaRect.left - 8);
-          const y = Math.max(0, ctaRect.top - 8);
-          const w = ctaRect.width + 16;
-          const h = ctaRect.height + 16;
+        const uploadLogBtn = document.getElementById('uploadLogBtn') as HTMLElement | null;
+        const watchLogBtn = document.getElementById('watchLogBtn') as HTMLElement | null;
+        if (uploadLogBtn || watchLogBtn) {
+          const firstRect = uploadLogBtn?.getBoundingClientRect();
+          const secondRect = watchLogBtn?.getBoundingClientRect();
+          const left = Math.min(
+            firstRect?.left ?? Number.POSITIVE_INFINITY,
+            secondRect?.left ?? Number.POSITIVE_INFINITY
+          );
+          const top = Math.min(
+            firstRect?.top ?? Number.POSITIVE_INFINITY,
+            secondRect?.top ?? Number.POSITIVE_INFINITY
+          );
+          const right = Math.max(
+            firstRect?.right ?? Number.NEGATIVE_INFINITY,
+            secondRect?.right ?? Number.NEGATIVE_INFINITY
+          );
+          const bottom = Math.max(
+            firstRect?.bottom ?? Number.NEGATIVE_INFINITY,
+            secondRect?.bottom ?? Number.NEGATIVE_INFINITY
+          );
+          const x = Math.max(0, left - 8);
+          const y = Math.max(0, top - 8);
+          const w = Math.max(0, right - left) + 16;
+          const h = Math.max(0, bottom - top) + 16;
           setupGuideSpotlight.style.setProperty('--spotlight-x', `${x}px`);
           setupGuideSpotlight.style.setProperty('--spotlight-y', `${y}px`);
           setupGuideSpotlight.style.setProperty('--spotlight-w', `${w}px`);
           setupGuideSpotlight.style.setProperty('--spotlight-h', `${h}px`);
         }
 
-        const segmented = document.querySelector('.segmented-wrapper') as HTMLElement | null;
-        const noteAnchor = segmented ?? logCtaActions;
+        const logCtaActions = document.querySelector('.log-cta-actions') as HTMLElement | null;
+        const noteAnchor = logCtaActions ?? uploadLogBtn ?? watchLogBtn;
         if (noteAnchor) {
           const anchorRect = noteAnchor.getBoundingClientRect();
           const noteX = Math.max(0, anchorRect.left);
@@ -211,6 +239,7 @@ export function initUIEvents(
     if (setupGuideSpotlight) {
       setupGuideSpotlight.classList.remove('active');
     }
+    document.body.classList.remove('setup-guide-focus-active');
     // Closing counts as dismissal; completion also counts.
     if (completed) {
       markSetupGuideCompleted();
@@ -275,6 +304,7 @@ export function initUIEvents(
   // SPA Navigation handlers
   const navItems = document.querySelectorAll('.nav-item');
   const pages = document.querySelectorAll('.page');
+  const header = document.querySelector('.header') as HTMLElement | null;
   
   function navigateToPage(pageId: string): void {
     // Update nav active state
@@ -286,6 +316,7 @@ export function initUIEvents(
     pages.forEach(page => page.classList.remove('active'));
     const activePage = document.getElementById(`page-${pageId}`);
     if (activePage) activePage.classList.add('active');
+    if (header) header.classList.remove('hidden');
   }
   
   // Add click handlers to nav items

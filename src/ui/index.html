@@ -6,16 +6,24 @@
     <link rel="icon" type="image/png" href="../../assets/AppIcon.png">
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css?family=Manrope" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <script>
       // Set responsive scale based on 1920x1080 baseline
       // Use 1rem = 16px as base, so scale will multiply values correctly
       function updateScale() {
-        const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
-        const clampedScale = Math.max(0.84, Math.min(1, scale));
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        const isVertical = w < h || w < 900;
+        const scale = isVertical
+          ? Math.min(w / 900, h / 1080)
+          : Math.min(w / 1920, h / 1080);
+        const minScale = isVertical ? 0.5 : 0.84;
+        const clampedScale = Math.max(minScale, Math.min(1, scale));
         document.documentElement.style.setProperty('--scale', clampedScale);
 
-        const textScale = Math.max(0.9, Math.min(1, scale));
+        const textScale = Math.max(isVertical ? 0.75 : 0.9, Math.min(1, scale));
         document.documentElement.style.setProperty('--text-scale', textScale);
       }
       updateScale();
@@ -24,6 +32,24 @@
   </head>
 
   <body>
+      <div id="custom-title-bar" style="display: none;">
+        <div class="title-bar-drag-area">
+          <div class="title-bar-title">Fenix</div>
+        </div>
+        <div class="title-bar-controls">
+          <button id="title-bar-minimize" class="title-bar-button" title="Minimize">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="3" y="8" width="10" height="1.5" rx="0.75" fill="#808080"/>
+            </svg>
+          </button>
+          <button id="title-bar-maximize" class="title-bar-button" title="Maximize"></button>
+          <button id="title-bar-close" class="title-bar-button" title="Close">
+            <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="16" height="16" viewBox="0 0 50 50">
+              <path d="M 7.71875 6.28125 L 6.28125 7.71875 L 23.5625 25 L 6.28125 42.28125 L 7.71875 43.71875 L 25 26.4375 L 42.28125 43.71875 L 43.71875 42.28125 L 26.4375 25 L 43.71875 7.71875 L 42.28125 6.28125 L 25 23.5625 Z" fill="currentColor"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
       <header>
         <div class="header">
           <div class="header-logo">
@@ -32,10 +58,7 @@
           </div>
           <div class="header-nav">
             <div id="nav-home" class="nav-item active">Home</div>
-            <div id="nav-prices" class="nav-item">
-              <span>Prices</span>
-              <span class="nav-badge nav-badge-new">New!</span>
-            </div>
+            <div id="nav-prices" class="nav-item"><span>Prices</span></div>
             <div id="nav-strategies" class="nav-item">Strategies</div>
           </div>
           <div class="header-user">
@@ -91,35 +114,18 @@
       <main>
         <!-- Page: Home -->
         <section id="page-home" class="page active">
-        <div class="segmented-wrapper">
-          <div class="segmented">
-            <div class="segmented-active-bg"></div>
-            <label id="realtimeBtn">
-              <input type="radio" name="mode" value="first" checked>
-              <div class="button-label">
-                <svg class="check-icon" width="13" height="10" viewBox="0 0 13 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M4.275 9.01875L0 4.74375L1.06875 3.675L4.275 6.88125L11.1563 0L12.225 1.06875L4.275 9.01875Z" fill="white"/>
-                </svg>
-                Total
-              </div>
-            </label>
-        
-            <label id="hourlyBtn">
-              <input type="radio" name="mode" value="second">
-              <div class="button-label">
-                <svg class="check-icon" width="13" height="10" viewBox="0 0 13 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M4.275 9.01875L0 4.74375L1.06875 3.675L4.275 6.88125L11.1563 0L12.225 1.06875L4.275 9.01875Z" fill="white"/>
-                </svg>
-                Hourly
-              </div>
-            </label>
-          </div>
-        </div>
-        
         <div class="log-cta" id="logCta">
           <div class="log-cta-text">
             <div class="log-cta-title">Start tracking your session</div>
             <div class="log-cta-subtitle">Upload your UE_game.log to get started. The "Watch Log" button is experimental, feedback needed, it should update the inventory every 10s.</div>
+            <button class="log-cta-help-link log-cta-help-link-inline" id="openSetupGuideLink" type="button" aria-label="Learn how to upload log">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+                <path d="M12 8v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <span>Learn how to upload log</span>
+            </button>
           </div>
           <div class="log-cta-actions">
             <button id="uploadLogBtn" class="upload-log-btn" title="Upload UE_game.log">
@@ -139,39 +145,100 @@
             </button>
           </div>
         </div>
-        <div class="log-cta-help">
-          <button class="log-cta-help-link" id="openSetupGuideLink" type="button" aria-label="Learn how to upload log">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
-              <path d="M12 8v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              <path d="M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-            <span>Learn how to upload log</span>
-          </button>
+
+        <div class="segmented-wrapper">
+          <div class="mode-controls">
+            <div class="segmented">
+              <div class="segmented-active-bg"></div>
+              <label id="hourlyBtn">
+                <input type="radio" name="mode" value="first" checked>
+                <div class="button-label">
+                  <svg class="check-icon" width="13" height="10" viewBox="0 0 13 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4.275 9.01875L0 4.74375L1.06875 3.675L4.275 6.88125L11.1563 0L12.225 1.06875L4.275 9.01875Z" fill="white"/>
+                  </svg>
+                  Session
+                </div>
+              </label>
+
+              <label id="realtimeBtn">
+                <input type="radio" name="mode" value="second">
+                <div class="button-label">
+                  <svg class="check-icon" width="13" height="10" viewBox="0 0 13 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4.275 9.01875L0 4.74375L1.06875 3.675L4.275 6.88125L11.1563 0L12.225 1.06875L4.275 9.01875Z" fill="white"/>
+                  </svg>
+                  Overview
+                </div>
+              </label>
+            </div>
+          </div>
         </div>
 
+        <div class="home-sticky-bar">
         <div class="stats-container">
             <div class="container-big">
-              <canvas class="wealth-graph" id="wealth-graph"></canvas> 
+              <div class="style1-graph-header" id="style1GraphHeader" aria-hidden="true">
+                <div class="style1-time-group">
+                  <span class="style1-time-label">Time</span>
+                  <div id="style1TimeValueWrap" class="style1-time-value-wrap"></div>
+                  <div id="style1TimeControlsSlot" class="style1-time-controls-slot"></div>
+                </div>
+                <div class="style1-wealth-group">
+                  <div class="style1-per-hour-group">
+                    <div id="style1PerHourValue" class="style1-per-hour-value"></div>
+                    <span class="style1-per-hour-label"><img src="../../assets/100300.webp" alt="FEICON">/hr</span>
+                  </div>
+                  <div class="style1-total-group">
+                    <span class="style1-total-label">Total</span>
+                    <div id="style1TotalValue" class="style1-total-value"></div>
+                    <img src="../../assets/100300.webp" alt="FEICON">
+                  </div>
+                </div>
+              </div>
+              <div class="wealth-graph-wrap">
+                <div class="wealth-graph-placeholder" id="wealth-graph-placeholder" aria-live="polite">Start the timer to start tracking</div>
+                <canvas class="wealth-graph" id="wealth-graph"></canvas>
+              </div>
             </div>
           <div class="container-small" id="timer-container">
             <div id="timer" class="maintext">00:00:00</div>
-            <div class="subtext">Duration</div>
-            <button class="timer-btn" id="resetRealtimeBtn" style="display: none; margin-top: 8px;">Reset Timer</button>
-            
+            <div class="subtext" id="avgTimePerMap">Avg time per map: 00:00</div>
+            <button class="timer-btn timer-reset-icon-btn" id="resetRealtimeBtn" style="display: none;" title="Reset timer" aria-label="Reset timer">
+              <svg class="timer-reset-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+              </svg>
+            </button>
+
             <div class="hourly-controls" id="hourlyControls">
               <div class="timer-display">
                 <span class="hourly-timer" id="hourlyTimer">00:00:00</span>
               </div>
               <div class="hourly-controls-row">
-                <button class="timer-btn" id="startHourly">Start Hour</button>
-                <button class="timer-btn" id="pauseHourly" style="display: none;">Pause</button>
-                <button class="timer-btn" id="resumeHourly" style="display: none;">Resume</button>
-                <button class="timer-btn stop" id="stopHourly" style="display: none;">Stop</button>
+                <button class="timer-btn timer-icon-btn" id="startHourly" title="Start session" aria-label="Start session">
+                  <svg class="timer-action-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 5.14v13.72c0 .87.93 1.4 1.65.93l10.59-6.86c.64-.42.64-1.44 0-1.86L9.65 4.21C8.93 3.74 8 4.27 8 5.14z"/>
+                  </svg>
+                </button>
+                <button class="timer-btn timer-icon-btn" id="pauseHourly" style="display: none;" title="Pause" aria-label="Pause">
+                  <svg class="timer-action-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="6" y="4" width="4" height="16" rx="1"/>
+                    <rect x="14" y="4" width="4" height="16" rx="1"/>
+                  </svg>
+                </button>
+                <button class="timer-btn timer-icon-btn" id="resumeHourly" style="display: none;" title="Resume" aria-label="Resume">
+                  <svg class="timer-action-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 5.14v13.72c0 .87.93 1.4 1.65.93l10.59-6.86c.64-.42.64-1.44 0-1.86L9.65 4.21C8.93 3.74 8 4.27 8 5.14z"/>
+                  </svg>
+                </button>
+                <button class="timer-btn timer-icon-btn stop" id="stopHourly" style="display: none;" title="Stop" aria-label="Stop">
+                  <svg class="timer-action-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="6" y="6" width="12" height="12" rx="1"/>
+                  </svg>
+                </button>
               </div>
             </div>
           </div>
-          <div class="container-small">
+          <div class="container-small" id="perhour-container">
             <div class="maintext">
             <img src="../../assets/100300.webp" alt="FEICON">
             <div id="wealthHourly">
@@ -180,7 +247,7 @@
             </div>
             <div class="subtext">Per hour</div>
           </div>
-          <div class="container-small">
+          <div class="container-small" id="total-container">
             <div class="maintext">
               <img src="../../assets/100300.webp" alt="FEICON"> 
               <div id="wealthValue">0</div>
@@ -189,12 +256,40 @@
           </div>
         </div>
 
-        <div class="search-container">
-          <svg class="search-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M9 17C13.4183 17 17 13.4183 17 9C17 4.58172 13.4183 1 9 1C4.58172 1 1 4.58172 1 9C1 13.4183 4.58172 17 9 17Z" stroke="#7E7E7E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M19 19L14.65 14.65" stroke="#7E7E7E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <input type="text" id="searchInput" placeholder="Search items..." />
+        <div class="search-filters-row">
+          <div class="search-container">
+            <svg class="search-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 17C13.4183 17 17 13.4183 17 9C17 4.58172 13.4183 1 9 1C4.58172 1 1 4.58172 1 9C1 13.4183 4.58172 17 9 17Z" stroke="#7E7E7E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M19 19L14.65 14.65" stroke="#7E7E7E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <input type="text" id="searchInput" placeholder="Search items..." />
+            <button id="clearSearch" style="display: none;" aria-label="Clear search">×</button>
+          </div>
+          <div class="filters-btn-wrapper">
+            <button type="button" id="filtersBtn" class="filters-btn" aria-haspopup="true" aria-expanded="false" aria-controls="filtersDropdown">
+              <svg class="filters-btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 6H20M4 12H14M4 18H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>Filters</span>
+            </button>
+            <div id="filtersDropdown" class="filters-dropdown" role="menu" aria-labelledby="filtersBtn" hidden>
+              <div class="filters-dropdown-title">Filters</div>
+              <div class="filters-dropdown-section">
+                <div class="filters-dropdown-label">Total Price Range</div>
+                <div class="filters-dropdown-row">
+                  <div class="filters-dropdown-field">
+                    <label class="filters-dropdown-field-label" for="minPriceInput">Minimum</label>
+                    <input type="text" id="minPriceInput" class="price-filter-input filters-dropdown-input" placeholder="No minimum" inputmode="numeric" pattern="[0-9]*">
+                  </div>
+                  <div class="filters-dropdown-field">
+                    <label class="filters-dropdown-field-label" for="maxPriceInput">Maximum</label>
+                    <input type="text" id="maxPriceInput" class="price-filter-input filters-dropdown-input" placeholder="No maximum" inputmode="numeric" pattern="[0-9]*">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         </div>
         
         <div class="inventory-breakdown-wrapper">
@@ -208,8 +303,9 @@
             </div>
             <div class="inventory-container">
               <div class="item-row header-row">
+                <div class="item-checkbox-cell header-checkbox-cell"></div>
                 <div class="item-name">Name</div>
-                <div class="item-quantity">Quantity</div>
+                <div class="item-quantity" data-sort="quantity">Quantity</div>
                 <div class="item-price">
                   <div class="item-single" data-sort="priceUnit">
                     Price
@@ -224,20 +320,8 @@
           </div>
         
           <div class="breakdown-section">
-            <div class="price-filter-container">
-              <div class="price-filter-section">
-                <div class="price-filter-row">
-                  <label class="price-filter-label" for="minPriceInput">Min:</label>
-                  <input type="number" id="minPriceInput" class="price-filter-input" placeholder="0" step="1" min="0">
-                </div>
-                <div class="price-filter-row">
-                  <label class="price-filter-label" for="maxPriceInput">Max:</label>
-                  <input type="number" id="maxPriceInput" class="price-filter-input" placeholder="∞" step="1" min="0">
-                </div>
-              </div>
-            </div>
             <div class="breakdown-container">
-              <div class="breakdown-header">Breakdown (FE)</div>
+              <div class="breakdown-header">Breakdown</div>
               <div id="breakdown" class="breakdown-content"></div>
             </div>
           </div>
@@ -274,29 +358,67 @@
             
             <!-- Main Content -->
             <div class="prices-container">
-              <div class="prices-header">
-                <div class="prices-search-container">
-                  <input type="text" id="pricesSearchInput" class="prices-search-input" placeholder="Search by item...">
-                  <button id="pricesClearSearch" class="prices-clear-search" style="display: none;">✕</button>
+              <div id="pricesListView">
+                <div class="prices-header">
+                  <div class="prices-search-container">
+                    <input type="text" id="pricesSearchInput" class="prices-search-input" placeholder="Search by item...">
+                    <button id="pricesClearSearch" class="prices-clear-search" style="display: none;">✕</button>
+                  </div>
+                  <select id="pricesSeasonSelect" class="prices-season-select">
+                    <option value="s11-vorax">S11 Vorax</option>
+                    <option value="s12-lunaria">S12 Lunaria</option>
+                  </select>
                 </div>
-                <select id="pricesSeasonSelect" class="prices-season-select">
-                  <option value="s11-vorax">S11 Vorax</option>
-                </select>
+                <div class="prices-table-wrapper">
+                  <table class="prices-table">
+                    <thead>
+                      <tr>
+                        <th class="prices-col-name" data-sort="name">Name</th>
+                        <th class="prices-col-updated">Updated at</th>
+                        <th class="prices-col-price" data-sort="price">Price</th>
+                        <th class="prices-col-sparkline" data-sort="trend">Last 7 days</th>
+                      </tr>
+                    </thead>
+                    <tbody id="pricesTableBody">
+                      <!-- Prices will be populated by JavaScript -->
+                    </tbody>
+                  </table>
+                </div>
               </div>
-              <div class="prices-table-wrapper">
-                <table class="prices-table">
-                  <thead>
-                    <tr>
-                      <th class="prices-col-name" data-sort="name">Name</th>
-                      <th class="prices-col-updated">Updated at</th>
-                      <th class="prices-col-price" data-sort="price">Price</th>
-                      <th class="prices-col-sparkline" data-sort="trend">Last 7 days</th>
-                    </tr>
-                  </thead>
-                  <tbody id="pricesTableBody">
-                    <!-- Prices will be populated by JavaScript -->
-                  </tbody>
-                </table>
+
+              <div id="pricesDetailView" class="prices-detail-view" style="display: none;">
+                <div class="prices-detail-page-header">
+                  <button id="pricesDetailBackBtn" class="history-back-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Back to prices</span>
+                  </button>
+                </div>
+                <div class="prices-item-detail">
+                  <div class="prices-item-detail-header">
+                    <div class="prices-item-detail-title-wrap">
+                      <img id="pricesDetailIcon" src="" alt="" class="prices-item-detail-icon" style="display: none;">
+                      <div>
+                        <div id="pricesDetailName" class="prices-item-detail-title">Select an item</div>
+                        <div id="pricesDetailDescription" class="prices-item-detail-description">Placeholder: item description will go here.</div>
+                      </div>
+                    </div>
+                    <div class="prices-item-detail-meta">
+                      <span id="pricesDetailPrice">Price: -- FE</span>
+                      <span id="pricesDetailUpdated">Updated: --</span>
+                    </div>
+                  </div>
+                  <div class="prices-history-range-controls">
+                    <button class="prices-history-range-btn active" data-range="7">7 days</button>
+                    <button class="prices-history-range-btn" data-range="30">30 days</button>
+                    <button class="prices-history-range-btn" data-range="90">90 days</button>
+                  </div>
+                  <div class="prices-item-detail-chart-wrap">
+                    <canvas id="pricesDetailChart" class="prices-item-detail-chart"></canvas>
+                    <div id="pricesDetailEmpty" class="prices-item-detail-empty" style="display: none;">No history yet for this item.</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -320,6 +442,75 @@
                   <path d="M10 14L21 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </a>
+            </div>
+          </div>
+        </section>
+
+        <!-- Page: Settings -->
+        <section id="page-settings" class="page">
+          <div class="settings-container">
+            <div class="settings-page-header">
+              <button id="settingsBackBtn" class="history-back-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Back</span>
+              </button>
+            </div>
+            <div class="settings-content">
+              <div class="settings-layout">
+                <div class="settings-sidebar">
+                  <div class="settings-sidebar-item active" data-section="general">
+                    General
+                  </div>
+                  <div class="settings-sidebar-item" data-section="preferences">
+                    Preferences
+                  </div>
+                </div>
+                <div class="settings-main">
+                  <div class="settings-section" id="generalSection">
+                    <div class="settings-section-title">General Settings</div>
+
+                    <div class="settings-group">
+                      <div class="settings-option settings-option-stack">
+                        <div class="settings-option-stack-copy">
+                          <div class="settings-option-label">Desktop App</div>
+                          <div class="settings-group-description">Get the full real-time tracking experience on Windows.</div>
+                        </div>
+                        <button id="settingsDownloadDesktopBtn" class="settings-download-btn">
+                          Download Windows App
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="settings-section" id="preferencesSection">
+                    <div class="settings-section-title">Preferences</div>
+
+                    <div class="settings-group">
+                      <div class="settings-option">
+                        <div class="settings-option-label">Include tax in price calculations</div>
+                        <label class="settings-checkbox-wrapper">
+                          <input type="checkbox" id="includeTaxCheckbox">
+                          <span class="settings-checkbox"></span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div class="settings-group">
+                      <div class="settings-option">
+                        <div class="settings-option-label">Cloud Sync</div>
+                        <label class="settings-checkbox-wrapper">
+                          <input type="checkbox" id="cloudSyncCheckbox">
+                          <span class="settings-checkbox"></span>
+                        </label>
+                      </div>
+                      <div class="settings-group-description" id="cloudSyncHelperText">
+                        Cloud Sync is enabled. Disabling it will stop all cloud reads and writes.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -484,80 +675,21 @@
       </div>
     </div>
 
-    <!-- Settings Modal -->
-    <div class="settings-modal" id="settingsModal">
-      <div class="settings-modal-content">
-        <button class="settings-close-btn" id="settingsCloseBtn" title="Close">✕</button>
-        <div class="settings-layout">
-          <div class="settings-sidebar">
-            <div class="settings-sidebar-item active" data-section="general">
-              General
-            </div>
-            <div class="settings-sidebar-item" data-section="preferences">
-              Preferences
-            </div>
-          </div>
-          <div class="settings-main">
-            <div class="settings-section" id="generalSection">
-              <div class="settings-section-title">General Settings</div>
-              
-              <div class="settings-group">
-                <div class="settings-option settings-option-stack">
-                  <div class="settings-option-label">Desktop App</div>
-                  <div class="settings-group-description">Get the full real-time tracking experience on Windows.</div>
-                  <button id="settingsDownloadDesktopBtn" class="settings-download-btn">
-                    Download Windows App
-                  </button>
-                </div>
-              </div>
-
-              <!-- Upload Log File removed from settings -->
-            </div>
-            <div class="settings-section" id="preferencesSection">
-              <div class="settings-section-title">Preferences</div>
-              
-              <div class="settings-group">
-                <div class="settings-option">
-                  <div class="settings-option-label">Include tax in price calculations</div>
-                  <label class="settings-checkbox-wrapper">
-                    <input type="checkbox" id="includeTaxCheckbox">
-                    <span class="settings-checkbox"></span>
-                  </label>
-                </div>
-              </div>
-
-              <div class="settings-group">
-                <div class="settings-option">
-                  <div class="settings-option-label">Cloud Sync</div>
-                  <label class="settings-checkbox-wrapper">
-                    <input type="checkbox" id="cloudSyncCheckbox">
-                    <span class="settings-checkbox"></span>
-                  </label>
-                </div>
-                <div class="settings-group-description" id="cloudSyncHelperText">
-                  Cloud Sync is enabled. Disabling it will stop all cloud reads and writes.
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="settings-footer">
-          <div class="settings-footer-message" id="settingsFooterMessage"></div>
-          <button class="settings-save-btn" id="settingsSaveBtn">Save</button>
-        </div>
-      </div>
-    </div>
-
     <script type="module" src="/renderer.ts"></script>
     <script>
       function updateSegmentedTransform() {
         const activeBg = document.querySelector('.segmented-active-bg');
         const inputs = document.querySelectorAll('.segmented input');
-        const checkedIndex = Array.from(inputs).findIndex(input => input.checked);
-        if (activeBg && checkedIndex >= 0) {
-          // Use the clamped scale from CSS variable for consistency
-          const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scale')) || 1;
-          activeBg.style.transform = `translateX(${checkedIndex * 125 * scale}px)`;
+        const checkedInput = Array.from(inputs).find(input => input.checked);
+        if (activeBg && checkedInput) {
+          const label = checkedInput.closest('label');
+          const segmented = activeBg.parentElement;
+          if (!label || !segmented) return;
+          const segmentedRect = segmented.getBoundingClientRect();
+          const labelRect = label.getBoundingClientRect();
+          const left = labelRect.left - segmentedRect.left;
+          activeBg.style.transform = `translateX(${left}px)`;
+          activeBg.style.width = `${labelRect.width}px`;
         }
       }
       
@@ -566,7 +698,38 @@
       });
       
       window.addEventListener('resize', updateSegmentedTransform);
-      updateSegmentedTransform(); // Initialize on load
+      updateSegmentedTransform();
+
+      const segmentedInputs = document.querySelectorAll('.segmented input');
+      if (segmentedInputs.length >= 2) {
+        segmentedInputs[0].checked = true;
+        segmentedInputs[1].checked = false;
+        updateSegmentedTransform();
+      }
+
+      const filtersBtn = document.getElementById('filtersBtn');
+      const filtersDropdown = document.getElementById('filtersDropdown');
+      if (filtersBtn && filtersDropdown) {
+        filtersBtn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          const isHidden = filtersDropdown.hasAttribute('hidden');
+          if (isHidden) {
+            filtersDropdown.removeAttribute('hidden');
+            filtersBtn.setAttribute('aria-expanded', 'true');
+          } else {
+            filtersDropdown.setAttribute('hidden', '');
+            filtersBtn.setAttribute('aria-expanded', 'false');
+          }
+        });
+        document.addEventListener('click', (event) => {
+          const target = event.target;
+          if (!(target instanceof Node)) return;
+          if (!filtersDropdown.contains(target) && !filtersBtn.contains(target)) {
+            filtersDropdown.setAttribute('hidden', '');
+            filtersBtn.setAttribute('aria-expanded', 'false');
+          }
+        });
+      }
     </script>
     
     <footer class="site-footer">

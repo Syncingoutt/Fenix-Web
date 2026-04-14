@@ -1,4 +1,4 @@
-// Settings modal management (web version)
+// Settings page management (web version)
 
 import { getIncludeTax, setIncludeTax } from '../state/settingsState.js';
 import { getCurrentItems } from '../state/inventoryState.js';
@@ -9,15 +9,13 @@ let pendingIncludeTax: boolean | null = null;
 let pendingCloudSyncEnabled: boolean | null = null;
 let currentCloudSyncEnabled: boolean | null = null;
 
-let settingsMenuOpen = false;
 let renderInventory: () => void;
 let renderBreakdown: () => void;
 let updateStats: (items: any[]) => void;
+let isSaving = false;
+let saveQueued = false;
 
-const settingsModal = document.getElementById('settingsModal')!;
-const settingsCloseBtn = document.getElementById('settingsCloseBtn') as HTMLButtonElement;
-const settingsSaveBtn = document.getElementById('settingsSaveBtn') as HTMLButtonElement;
-const settingsFooterMessage = document.getElementById('settingsFooterMessage')!;
+const settingsBackBtn = document.getElementById('settingsBackBtn') as HTMLButtonElement | null;
 const generalSection = document.getElementById('generalSection')!;
 const preferencesSection = document.getElementById('preferencesSection')!;
 const includeTaxCheckbox = document.getElementById('includeTaxCheckbox') as HTMLInputElement | null;
@@ -35,9 +33,70 @@ export function initSettingsModal(
   renderInventory = inventoryRenderer;
   renderBreakdown = breakdownRenderer;
   updateStats = statsUpdater;
-  settingsMenuOpen = settingsMenuState.open;
-  
-  // Open settings modal
+
+  const header = document.querySelector('.header') as HTMLElement | null;
+
+  function navigateToSettingsPage(): void {
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+    const settingsEl = document.getElementById('page-settings');
+    if (settingsEl) settingsEl.classList.add('active');
+    if (header) header.classList.add('hidden');
+  }
+
+  async function persistSettingsChanges(): Promise<void> {
+    const settingsToSave: { includeTax?: boolean } = {};
+
+    const checkboxElement = document.getElementById('includeTaxCheckbox') as HTMLInputElement | null;
+    const currentTaxValue = checkboxElement ? checkboxElement.checked : (pendingIncludeTax ?? false);
+    settingsToSave.includeTax = currentTaxValue;
+
+    if (pendingCloudSyncEnabled !== null && currentCloudSyncEnabled !== null) {
+      if (pendingCloudSyncEnabled !== currentCloudSyncEnabled) {
+        const syncResult = await webAPI.setCloudSyncEnabled(pendingCloudSyncEnabled);
+        if (!syncResult.success) {
+          if (cloudSyncCheckbox) {
+            cloudSyncCheckbox.checked = currentCloudSyncEnabled;
+          }
+          return;
+        }
+
+        currentCloudSyncEnabled = pendingCloudSyncEnabled;
+        if (cloudSyncHelperText) {
+          cloudSyncHelperText.textContent = currentCloudSyncEnabled
+            ? 'Cloud Sync is enabled. Disabling it will stop all cloud reads and writes.'
+            : 'Cloud Sync is disabled. You will only see local prices.';
+        }
+      }
+    }
+
+    const saveResult = await webAPI.saveSettings(settingsToSave);
+    if (saveResult.success) {
+      setIncludeTax(settingsToSave.includeTax ?? false);
+      updateStats(getCurrentItems());
+      renderBreakdown();
+    }
+  }
+
+  async function queueAutoSave(): Promise<void> {
+    if (isSaving) {
+      saveQueued = true;
+      return;
+    }
+
+    isSaving = true;
+    do {
+      saveQueued = false;
+      try {
+        await persistSettingsChanges();
+      } catch (error) {
+        console.error('Auto-save settings failed:', error);
+      }
+    } while (saveQueued);
+    isSaving = false;
+  }
+
+  // Open settings page
   const openSettingsBtn = document.getElementById('openSettingsBtn') as HTMLButtonElement;
   if (openSettingsBtn) {
     openSettingsBtn.addEventListener('click', async () => {
@@ -71,14 +130,6 @@ export function initSettingsModal(
           : 'Cloud Sync is disabled. You will only see local prices.';
       }
       
-      // Reset save button state
-      settingsSaveBtn.disabled = false;
-      settingsSaveBtn.textContent = 'Save';
-      
-      // Clear footer message
-      settingsFooterMessage.textContent = '';
-      settingsFooterMessage.classList.remove('show', 'success', 'error');
-      
       // Show general section by default
       generalSection.classList.add('active');
       preferencesSection.classList.remove('active');
@@ -92,20 +143,13 @@ export function initSettingsModal(
           item.classList.remove('active');
         }
       });
-      
-      settingsModal.classList.add('active');
+
+      navigateToSettingsPage();
     });
   }
-  
-  // Close settings modal
-  settingsCloseBtn.addEventListener('click', () => {
+
+  settingsBackBtn?.addEventListener('click', () => {
     closeSettingsModal();
-  });
-  
-  settingsModal.addEventListener('click', (e) => {
-    if (e.target === settingsModal) {
-      closeSettingsModal();
-    }
   });
   
   // Handle tax checkbox change
@@ -113,6 +157,7 @@ export function initSettingsModal(
     includeTaxCheckbox.addEventListener('change', () => {
       if (includeTaxCheckbox) {
         pendingIncludeTax = includeTaxCheckbox.checked;
+        void queueAutoSave();
       }
     });
   }
@@ -127,6 +172,7 @@ export function initSettingsModal(
   if (cloudSyncCheckbox) {
     cloudSyncCheckbox.addEventListener('change', () => {
       pendingCloudSyncEnabled = cloudSyncCheckbox.checked;
+      void queueAutoSave();
     });
   }
   
@@ -149,65 +195,15 @@ export function initSettingsModal(
     });
   });
   
-  // Save settings
-  settingsSaveBtn.addEventListener('click', async () => {
-    settingsSaveBtn.disabled = true;
-    settingsSaveBtn.textContent = 'Saving...';
-    
-    try {
-      const settingsToSave: { includeTax?: boolean } = {};
-      
-      const checkboxElement = document.getElementById('includeTaxCheckbox') as HTMLInputElement | null;
-      const currentTaxValue = checkboxElement ? checkboxElement.checked : (pendingIncludeTax ?? false);
-      settingsToSave.includeTax = currentTaxValue;
-
-      if (pendingCloudSyncEnabled !== null && currentCloudSyncEnabled !== null) {
-        if (pendingCloudSyncEnabled !== currentCloudSyncEnabled) {
-          const syncResult = await webAPI.setCloudSyncEnabled(pendingCloudSyncEnabled);
-          if (!syncResult.success) {
-            settingsFooterMessage.textContent = syncResult.error || 'Failed to update cloud sync';
-            settingsFooterMessage.classList.add('show', 'error');
-            settingsSaveBtn.disabled = false;
-            settingsSaveBtn.textContent = 'Save';
-            return;
-          }
-          
-          currentCloudSyncEnabled = pendingCloudSyncEnabled;
-          if (cloudSyncHelperText) {
-            cloudSyncHelperText.textContent = currentCloudSyncEnabled
-              ? 'Cloud Sync is enabled. Disabling it will stop all cloud reads and writes.'
-              : 'Cloud Sync is disabled. You will only see local prices.';
-          }
-        }
-      }
-
-      const saveResult = await webAPI.saveSettings(settingsToSave);
-      
-      if (saveResult.success) {
-        setIncludeTax(settingsToSave.includeTax ?? false);
-        settingsFooterMessage.textContent = 'Settings saved successfully';
-        settingsFooterMessage.classList.add('show', 'success');
-        
-        // Update stats with new tax setting
-        updateStats(getCurrentItems());
-        renderBreakdown();
-      } else {
-        settingsFooterMessage.textContent = saveResult.error || 'Failed to save settings';
-        settingsFooterMessage.classList.add('show', 'error');
-      }
-    } catch (error: any) {
-      console.error('Failed to save settings:', error);
-      settingsFooterMessage.textContent = error.message || 'Failed to save settings';
-      settingsFooterMessage.classList.add('show', 'error');
-    } finally {
-      settingsSaveBtn.disabled = false;
-      settingsSaveBtn.textContent = 'Save';
-    }
-  });
 }
 
 export function closeSettingsModal(): void {
-  settingsModal.classList.remove('active');
-  settingsFooterMessage.textContent = '';
-  settingsFooterMessage.classList.remove('show', 'success', 'error');
+  document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+  const homePage = document.getElementById('page-home');
+  if (homePage) homePage.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+  const homeNav = document.getElementById('nav-home');
+  if (homeNav) homeNav.classList.add('active');
+  const header = document.querySelector('.header') as HTMLElement | null;
+  if (header) header.classList.remove('hidden');
 }

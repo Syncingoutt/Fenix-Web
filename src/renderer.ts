@@ -22,7 +22,8 @@ import { renderInventory, updateSortIndicators } from './renderer/inventory/inve
 import { renderBreakdown } from './renderer/inventory/breakdownRenderer.js';
 
 // Graph
-import { initGraph, pushRealtimePoint, pushPoint, updateGraph } from './renderer/graph/graphManager.js';
+import { initGraph, pushRealtimePoint, pushPoint, updateGraph, resizeGraph } from './renderer/graph/graphManager.js';
+import { initStyle1GraphHeaderLayout } from './renderer/layout/style1GraphHeaderLayout.js';
 
 // Modals
 import { showBreakdownModal, initBreakdownModal, closeBreakdownModal } from './renderer/modals/breakdownModal.js';
@@ -102,11 +103,15 @@ async function loadInventory(): Promise<void> {
  * Initialize all modules and set up event listeners
  */
 async function initialize(): Promise<void> {
+  document.body.classList.add('layout-style-1');
+
   // Initialize UI state
   initUIState();
   
   // Initialize graph
   initGraph();
+  initStyle1GraphHeaderLayout();
+  resizeGraph();
   
   // Initialize modals
   initBreakdownModal(renderInventory, () => renderBreakdown(renderInventory));

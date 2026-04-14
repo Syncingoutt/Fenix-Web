@@ -2,7 +2,7 @@
 
 import { InventoryItem } from '../types.js';
 import { FLAME_ELEMENTIUM_ID } from '../constants.js';
-import { getCurrentItems, getMinPriceFilter, getMaxPriceFilter } from '../state/inventoryState.js';
+import { getCurrentItems, getMinPriceFilter, getMaxPriceFilter, isItemCountEnabled } from '../state/inventoryState.js';
 import { getHourlyStartSnapshot, getIncludedItems } from '../state/wealthState.js';
 import { applyTax } from '../utils/tax.js';
 import { passesPriceFilters } from '../utils/filters.js';
@@ -14,6 +14,8 @@ export function getCurrentTotalValue(): number {
   const currentItems = getCurrentItems();
   
   return currentItems.reduce((sum, item) => {
+    // Skip items excluded from count (unchecked)
+    if (!isItemCountEnabled(item.baseId)) return sum;
     // Skip items that don't pass price filters
     if (!passesPriceFilters(item)) {
       return sum;
@@ -45,6 +47,7 @@ export function getHourlyWealthGain(): number {
   // Other compasses/beacons are treated like normal items
   for (const item of currentItems) {
     if (item.price === null) continue;
+    if (!isItemCountEnabled(item.baseId)) continue;
     
     // Skip only the selected compasses/beacons (they're handled separately)
     if (includedItems.has(item.baseId)) {
@@ -88,6 +91,7 @@ export function getHourlyWealthGain(): number {
   // Selected compasses/beacons: do NOT apply tax (use raw price)
   
   for (const baseId of includedItems) {
+    if (!isItemCountEnabled(baseId)) continue;
     // Always get the latest price from currentItems (prices can be updated during session)
     const item = currentItems.find(i => i.baseId === baseId);
     if (!item || item.price === null) continue;

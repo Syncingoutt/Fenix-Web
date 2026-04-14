@@ -3,7 +3,7 @@
 import { InventoryItem } from '../types.js';
 import { getSortedAndFilteredItems } from './inventoryLogic.js';
 import { getWealthMode, getIsHourlyActive } from '../state/wealthState.js';
-import { getCurrentSortBy, getCurrentSortOrder } from '../state/inventoryState.js';
+import { getCurrentSortBy, getCurrentSortOrder, isItemCountEnabled } from '../state/inventoryState.js';
 import { applyTax } from '../utils/tax.js';
 import { renderUsageSection } from './usageRenderer.js';
 
@@ -34,9 +34,15 @@ export function renderInventory(): void {
       const totalValue = item.price !== null ? item.price * item.totalQuantity : null;
       // Apply tax to total value (but not to base price)
       const totalValueAfterTax = totalValue !== null ? applyTax(totalValue, item.baseId) : null;
+      const counted = isItemCountEnabled(item.baseId);
 
       return `
       <div class="item-row">
+        <div class="item-checkbox-cell">
+          <button type="button" class="inventory-item-checkbox ${counted ? 'checked' : ''}" data-base-id="${item.baseId}" aria-label="${counted ? 'Exclude from total' : 'Include in total'}" title="${counted ? 'Exclude from total' : 'Include in total'}">
+            ${counted ? '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 6L5 9L10 3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
+          </button>
+        </div>
         <div class="item-name">
           <img src="${(import.meta.env.BASE_URL || '/')}assets/${item.baseId}.webp" 
                alt="${item.itemName}" 
@@ -77,6 +83,8 @@ export function updateSortIndicators(): void {
     // Set content
     if (sortType === 'priceUnit') {
       (el as HTMLElement).textContent = 'Price';
+    } else if (sortType === 'quantity') {
+      (el as HTMLElement).textContent = 'Quantity';
     } else {
       (el as HTMLElement).textContent = 'Total';
     }

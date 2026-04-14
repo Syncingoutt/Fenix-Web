@@ -1,7 +1,7 @@
 // Breakdown section rendering
 
 import { getDisplayItems } from './inventoryLogic.js';
-import { getItemDatabase, getSelectedGroupFilter, setSelectedGroupFilter } from '../state/inventoryState.js';
+import { getItemDatabase, getSelectedGroupFilter, setSelectedGroupFilter, isItemCountEnabled } from '../state/inventoryState.js';
 import { applyTax } from '../utils/tax.js';
 import { passesPriceFilters } from '../utils/filters.js';
 import { formatGroupName } from '../utils/formatting.js';
@@ -23,6 +23,7 @@ export function renderBreakdown(renderInventoryFn: () => void): void {
   
   for (const item of itemsToUse) {
     if (item.price === null) continue;
+    if (!isItemCountEnabled(item.baseId)) continue;
     // Skip items with 0 or negative quantity (only show gains in hourly mode)
     if (item.totalQuantity <= 0) continue;
     
@@ -47,7 +48,7 @@ export function renderBreakdown(renderInventoryFn: () => void): void {
     .sort((a, b) => b.total - a.total);
 
   if (groups.length === 0) {
-    breakdownEl.innerHTML = '<div class="breakdown-empty">No items with prices</div>';
+    breakdownEl.innerHTML = '';
     return;
   }
 
@@ -57,8 +58,10 @@ export function renderBreakdown(renderInventoryFn: () => void): void {
     const isSelected = selectedGroupFilter === group;
     return `
       <div class="breakdown-group ${isSelected ? 'selected' : ''}" data-group="${group}" title="${formattedGroupName}">
-        <img src="${(import.meta.env.BASE_URL || '/')}assets/${group}.webp" alt="${formattedGroupName}" class="breakdown-icon" title="${formattedGroupName}" onerror="this.style.display='none'">
-        <span class="breakdown-group-value" title="${formattedGroupName}">${total.toFixed(0)} FE</span>
+        <div class="breakdown-icon-box">
+          <img src="${(import.meta.env.BASE_URL || '/')}assets/${group}.webp" alt="${formattedGroupName}" class="breakdown-icon" title="${formattedGroupName}" onerror="this.style.display='none'">
+        </div>
+        <span class="breakdown-group-value" title="${formattedGroupName}">${total.toFixed(0)}</span>
       </div>
     `;
   }).join('');
