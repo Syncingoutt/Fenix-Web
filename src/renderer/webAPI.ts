@@ -21,6 +21,14 @@ let timerCallbacks: Array<(data: { type: string; seconds: number }) => void> = [
 let inventoryUpdateCallbacks: Array<() => void> = [];
 const INVENTORY_CACHE_KEY = 'fenix_inventory_cache';
 
+function persistInventoryCacheIfNotEmpty(): void {
+  if (!inventoryManager) return;
+  const inventory = inventoryManager.getInventory();
+  // Never clobber existing cache during startup with an empty snapshot.
+  if (inventory.length === 0) return;
+  localStorage.setItem(INVENTORY_CACHE_KEY, JSON.stringify(inventory));
+}
+
 // Initialize services
 export async function initializeWebAPI(): Promise<void> {
   // Load item database
@@ -35,7 +43,7 @@ export async function initializeWebAPI(): Promise<void> {
     if (inventoryManager) {
       inventoryManager.applyPriceCache(cache);
       await savePriceCache(inventoryManager.getPriceCacheAsObject());
-      localStorage.setItem(INVENTORY_CACHE_KEY, JSON.stringify(inventoryManager.getInventory()));
+      persistInventoryCacheIfNotEmpty();
       notifyInventoryUpdate();
     }
   });
@@ -81,7 +89,7 @@ export async function initializeWebAPI(): Promise<void> {
       if (inventoryManager) {
         inventoryManager.applyPriceCache(cloudCache);
         await savePriceCache(inventoryManager.getPriceCacheAsObject());
-        localStorage.setItem(INVENTORY_CACHE_KEY, JSON.stringify(inventoryManager.getInventory()));
+        persistInventoryCacheIfNotEmpty();
         notifyInventoryUpdate();
       }
     }
