@@ -306,7 +306,20 @@ export function initUIEvents(
   const pages = document.querySelectorAll('.page');
   const header = document.querySelector('.header') as HTMLElement | null;
   
-  function navigateToPage(pageId: string): void {
+  function resolvePageFromHash(hashValue: string): string | null {
+    const normalized = hashValue.replace(/^#\/?/, '').trim().toLowerCase();
+    if (!normalized) return null;
+    const matchingPage = document.getElementById(`page-${normalized}`);
+    return matchingPage ? normalized : null;
+  }
+
+  function navigateToPage(
+    pageId: string,
+    options: { updateHash?: boolean } = {}
+  ): void {
+    const targetPage = document.getElementById(`page-${pageId}`);
+    if (!targetPage) return;
+
     // Update nav active state
     navItems.forEach(item => item.classList.remove('active'));
     const activeNav = document.getElementById(`nav-${pageId}`);
@@ -314,9 +327,15 @@ export function initUIEvents(
     
     // Update page visibility
     pages.forEach(page => page.classList.remove('active'));
-    const activePage = document.getElementById(`page-${pageId}`);
-    if (activePage) activePage.classList.add('active');
+    targetPage.classList.add('active');
     if (header) header.classList.remove('hidden');
+
+    if (options.updateHash !== false) {
+      const nextHash = `#${pageId}`;
+      if (window.location.hash !== nextHash) {
+        window.location.hash = nextHash;
+      }
+    }
   }
   
   // Add click handlers to nav items
@@ -326,4 +345,16 @@ export function initUIEvents(
       navigateToPage(pageId);
     });
   });
+
+  window.addEventListener('hashchange', () => {
+    const pageFromHash = resolvePageFromHash(window.location.hash);
+    if (pageFromHash) {
+      navigateToPage(pageFromHash, { updateHash: false });
+    }
+  });
+
+  const initialPageFromHash = resolvePageFromHash(window.location.hash);
+  if (initialPageFromHash) {
+    navigateToPage(initialPageFromHash, { updateHash: false });
+  }
 }
