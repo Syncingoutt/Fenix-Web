@@ -38,8 +38,8 @@ export interface ElectronAPI {
   getInventory: () => Promise<InventoryItem[]>;
   getItemDatabase: () => Promise<Record<string, { name: string; tradable?: boolean; group?: string }>>;
   getPriceCache: () => Promise<PriceCache>;
-  getPriceHistory: (payload: { baseId: string; leagueId?: string; maxDays?: number }) => Promise<PriceHistoryPoint[]>;
-  getPriceHistoryBatch: (payload?: { leagueId?: string; maxDays?: number }) => Promise<PriceHistoryByItem>;
+  getPriceHistory: (payload: { baseId: string; leagueId?: string; maxDays?: number; maxSnapshotDocs?: number }) => Promise<PriceHistoryPoint[]>;
+  getPriceHistoryBatch: (payload?: { leagueId?: string; maxDays?: number; maxSnapshotDocs?: number }) => Promise<PriceHistoryByItem>;
   onInventoryUpdate: (callback: () => void) => void;
   startHourlyTimer: () => void;
   pauseHourlyTimer: () => void;
@@ -73,6 +73,7 @@ export interface ElectronAPI {
   closeWindow: () => void;
   onMaximizeStateChanged: (callback: (isMaximized: boolean) => void) => void;
   getMaximizeState: () => Promise<boolean>;
+  openExternal: (url: string) => void;
 }
 
 export interface HourlyBucket {

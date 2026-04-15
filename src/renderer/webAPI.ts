@@ -157,19 +157,21 @@ export const webAPI = {
     return inventoryManager.getPriceCacheAsObject();
   },
 
-  async getPriceHistory(payload: { baseId: string; leagueId?: string; maxDays?: number }): Promise<PriceHistoryPoint[]> {
+  async getPriceHistory(payload: { baseId: string; leagueId?: string; maxDays?: number; maxSnapshotDocs?: number }): Promise<PriceHistoryPoint[]> {
     if (!priceSyncService) return [];
     const baseId = payload?.baseId ?? '';
     const leagueId = payload?.leagueId;
     const maxDays = payload?.maxDays;
-    return priceSyncService.getPriceHistory({ baseId, leagueId, maxDays });
+    const maxSnapshotDocs = payload?.maxSnapshotDocs;
+    return priceSyncService.getPriceHistory({ baseId, leagueId, maxDays, maxSnapshotDocs });
   },
 
-  async getPriceHistoryBatch(payload?: { leagueId?: string; maxDays?: number }): Promise<PriceHistoryByItem> {
+  async getPriceHistoryBatch(payload?: { leagueId?: string; maxDays?: number; maxSnapshotDocs?: number }): Promise<PriceHistoryByItem> {
     if (!priceSyncService) return {};
     const leagueId = payload?.leagueId;
     const maxDays = payload?.maxDays;
-    return priceSyncService.getPriceHistoryBatch({ leagueId, maxDays });
+    const maxSnapshotDocs = payload?.maxSnapshotDocs;
+    return priceSyncService.getPriceHistoryBatch({ leagueId, maxDays, maxSnapshotDocs });
   },
 
   getPriceCacheStatus(): { lastUpdated: number | null; lastError: string | null } {
@@ -319,6 +321,14 @@ export const webAPI = {
 
   closeWindow(): void {
     // No-op in web version
+  },
+
+  openExternal(url: string): void {
+    try {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch (error) {
+      console.warn('Failed to open external URL:', error);
+    }
   },
 
   onMaximizeStateChanged(_callback: (isMaximized: boolean) => void): void {
