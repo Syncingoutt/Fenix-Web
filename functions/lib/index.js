@@ -39,7 +39,7 @@ const firebase_functions_1 = require("firebase-functions");
 const scheduler_1 = require("firebase-functions/v2/scheduler");
 const crypto_1 = require("crypto");
 admin.initializeApp();
-const DEFAULT_LEAGUE_ID = 's11-vorax';
+const DEFAULT_LEAGUE_ID = 's12-lunaria';
 const HISTORY_RETENTION_DAYS = 90;
 const HISTORY_COLLECTION_PATH = 'prices/history';
 const SNAPSHOT_COLLECTION_PATH = 'pricesSnapshots';

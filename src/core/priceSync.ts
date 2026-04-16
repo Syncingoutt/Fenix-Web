@@ -40,7 +40,7 @@ const DEFAULT_CONFIG: CloudSyncConfig = {
 const SYNC_CACHE_TTL_MS = 20 * 60 * 1000; // 20 minutes
 // Snapshot schema:
 // pricesSnapshots/{leagueId} -> { data: { [baseId]: { price, timestamp, listingCount? } }, lastUpdated: Timestamp }
-const DEFAULT_LEAGUE_ID = 's11-vorax';
+const DEFAULT_LEAGUE_ID = 's12-lunaria';
 const PRICE_SNAPSHOT_DOC_PATH = `pricesSnapshots/${DEFAULT_LEAGUE_ID}`;
 const PRICE_LAST_SYNC_KEY = 'fenix_price_last_sync_at';
 

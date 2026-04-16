@@ -40,7 +40,7 @@ let sortColumn: string = 'price';
 let sortDirection: 'asc' | 'desc' = 'desc';
 let currentGroup: string = 'currency';
 let currentSearchTerm: string = '';
-let currentLeagueId = 's11-vorax';
+let currentLeagueId = 's12-lunaria';
 let selectedBaseId: string | null = null;
 let detailChart: any = null;
 const detailHistoryCache = new Map<string, PriceHistoryPoint[]>();
@@ -1472,6 +1472,12 @@ export function initPrices(): void {
     });
     
     observer.observe(pricesPage, { attributes: true });
+
+    // Hash-based startup navigation can activate prices before this observer exists.
+    // If the page is already active at init time, trigger the initial data load now.
+    if (pricesPage.classList.contains('active')) {
+      loadPrices();
+    }
   }
 
   // Keep startup fast by lazy-loading prices only when the page is opened.
