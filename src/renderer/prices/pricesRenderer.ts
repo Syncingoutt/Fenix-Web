@@ -241,6 +241,9 @@ function formatPrice(price: number): string {
 
 function formatTooltipPriceFe(price: number): string {
   if (!Number.isFinite(price) || price <= 0) return '0';
+  if (price < 1) {
+    return price.toFixed(2);
+  }
   if (price >= 1000000) {
     const value = price / 1000000;
     const precision = value >= 10 ? 0 : 1;
