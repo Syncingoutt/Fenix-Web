@@ -57,6 +57,8 @@ let last7HistoryLoadedAt = 0;
 let last7HistoryLeagueId = '';
 let isCloudSyncEnabledForPrices = true;
 const HISTORY_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+const PRICE_REFRESH_COOLDOWN_MS = 20 * 60 * 1000;
+const PRICE_PAGE_CACHE_KEY = 'fenix_prices_page_cache_v1';
 const SPARKLINES_PER_FRAME = 24;
 const TREND_MIN_PERCENT = 1;
 let sparklineRenderRequestVersion = 0;
@@ -67,6 +69,10 @@ let rangeSelectionDragSource: 'main' | 'nav' | null = null;
 let rangeSelectionDragStartClientX = 0;
 let rangeSelectionDragStartIndex = 0;
 let rangeSelectionDragEndIndex = 0;
+let nextRefreshAllowedAt = 0;
+let refreshCountdownIntervalId: number | null = null;
+let hasLoadedPricesAtLeastOnce = false;
+let lastLoadedLeagueId = '';
 
 declare const Chart: any;
 
@@ -350,6 +356,102 @@ function formatUpdatedAt(timestamp: number): string {
     return '--';
   }
   return new Date(timestamp).toLocaleString();
+}
+
+interface PricesPageCacheRecord {
+  byLeague: Record<string, {
+    historyByItem: PriceHistoryByItem;
+    nextRefreshAllowedAt: number;
+    cachedAt: number;
+  }>;
+}
+
+function loadPricesPageCacheRecord(): PricesPageCacheRecord {
+  try {
+    const raw = localStorage.getItem(PRICE_PAGE_CACHE_KEY);
+    if (!raw) {
+      return { byLeague: {} };
+    }
+    const parsed = JSON.parse(raw) as PricesPageCacheRecord;
+    if (!parsed || typeof parsed !== 'object' || typeof parsed.byLeague !== 'object' || parsed.byLeague === null) {
+      return { byLeague: {} };
+    }
+    return parsed;
+  } catch {
+    return { byLeague: {} };
+  }
+}
+
+function getCachedHistoryForLeague(leagueId: string): {
+  historyByItem: PriceHistoryByItem;
+  nextRefreshAllowedAt: number;
+} | null {
+  const record = loadPricesPageCacheRecord();
+  const entry = record.byLeague[leagueId];
+  if (!entry || typeof entry !== 'object') {
+    return null;
+  }
+  const historyByItem = entry.historyByItem && typeof entry.historyByItem === 'object'
+    ? entry.historyByItem
+    : {};
+  const cachedNextAllowed = typeof entry.nextRefreshAllowedAt === 'number' && Number.isFinite(entry.nextRefreshAllowedAt)
+    ? entry.nextRefreshAllowedAt
+    : 0;
+  return { historyByItem, nextRefreshAllowedAt: cachedNextAllowed };
+}
+
+function saveCachedHistoryForLeague(leagueId: string, historyByItem: PriceHistoryByItem, nextAllowedAt: number): void {
+  const record = loadPricesPageCacheRecord();
+  record.byLeague[leagueId] = {
+    historyByItem,
+    nextRefreshAllowedAt: nextAllowedAt,
+    cachedAt: Date.now()
+  };
+  try {
+    localStorage.setItem(PRICE_PAGE_CACHE_KEY, JSON.stringify(record));
+  } catch (error) {
+    console.error('Failed to persist prices page cache:', error);
+  }
+}
+
+function formatCooldown(msRemaining: number): string {
+  const safeMs = Math.max(0, msRemaining);
+  const totalSeconds = Math.ceil(safeMs / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function updateRefreshControls(): void {
+  const refreshButton = document.getElementById('pricesRefreshBtn') as HTMLButtonElement | null;
+  const refreshStatus = document.getElementById('pricesRefreshStatus');
+  if (!refreshButton || !refreshStatus) return;
+
+  if (!isCloudSyncEnabledForPrices) {
+    refreshButton.disabled = true;
+    refreshButton.classList.remove('is-cooldown');
+    refreshStatus.textContent = 'Cloud sync disabled';
+    return;
+  }
+
+  const now = Date.now();
+  const remainingMs = Math.max(0, nextRefreshAllowedAt - now);
+  const onCooldown = remainingMs > 0;
+  refreshButton.disabled = onCooldown;
+  refreshButton.classList.toggle('is-cooldown', onCooldown);
+
+  if (onCooldown) {
+    refreshStatus.textContent = `Refresh available in ${formatCooldown(remainingMs)}`;
+  } else {
+    refreshStatus.textContent = 'Refresh ready';
+  }
+}
+
+function startRefreshCountdown(): void {
+  if (refreshCountdownIntervalId !== null) return;
+  refreshCountdownIntervalId = window.setInterval(() => {
+    updateRefreshControls();
+  }, 1000);
 }
 
 function getAssetPath(baseId: string): string {
@@ -1087,7 +1189,8 @@ function scheduleSparklineRender(renderData: RenderRowData[]): void {
 /**
  * Load and process price data
  */
-export async function loadPrices(): Promise<void> {
+export async function loadPrices(options?: { manualRefresh?: boolean }): Promise<void> {
+  const manualRefresh = options?.manualRefresh === true;
   try {
     const [db, cloudSyncStatus] = await Promise.all([
       webAPI.getItemDatabase(),
@@ -1099,9 +1202,29 @@ export async function loadPrices(): Promise<void> {
     let allItems: PriceItem[] = [];
 
     if (isCloudSyncEnabledForPrices) {
-      // Cloud-enabled mode: avoid showing stale local cache values while cloud history loads.
-      const historyByItem = await webAPI.getPriceHistoryBatch({ leagueId: currentLeagueId, maxDays: 7, maxSnapshotDocs: 160 });
-      last7DayHistoryByItem = historyByItem ?? {};
+      let historyByItemToApply: PriceHistoryByItem | null = null;
+      const cachedEntry = getCachedHistoryForLeague(currentLeagueId);
+      nextRefreshAllowedAt = cachedEntry?.nextRefreshAllowedAt ?? 0;
+      const isManualRefreshOnCooldown = manualRefresh && nextRefreshAllowedAt > Date.now();
+
+      if (!manualRefresh && cachedEntry) {
+        historyByItemToApply = cachedEntry.historyByItem;
+      }
+
+      if (!historyByItemToApply || manualRefresh) {
+        if (isManualRefreshOnCooldown && cachedEntry) {
+          historyByItemToApply = cachedEntry.historyByItem;
+        } else {
+          const historyByItem = await webAPI.getPriceHistoryBatch({ leagueId: currentLeagueId, maxDays: 7, maxSnapshotDocs: 160 });
+          historyByItemToApply = historyByItem ?? {};
+          if (manualRefresh) {
+            nextRefreshAllowedAt = Date.now() + PRICE_REFRESH_COOLDOWN_MS;
+          }
+          saveCachedHistoryForLeague(currentLeagueId, historyByItemToApply, nextRefreshAllowedAt);
+        }
+      }
+
+      last7DayHistoryByItem = historyByItemToApply ?? {};
       cloudSparklineHistoryCache.clear();
       last7HistoryLoadedAt = Date.now();
       last7HistoryLeagueId = currentLeagueId;
@@ -1142,6 +1265,7 @@ export async function loadPrices(): Promise<void> {
       allItems = cloudItems.sort((a, b) => a.name.localeCompare(b.name));
     } else {
       // Cloud-disabled mode: rely only on local cache, no cloud DB reads.
+      nextRefreshAllowedAt = 0;
       const cache = await webAPI.getPriceCache();
       priceCache = cache;
       last7DayHistoryByItem = {};
@@ -1207,6 +1331,10 @@ export async function loadPrices(): Promise<void> {
         updateDetailPriceStats(selectedBaseId, selectedItem.price, history);
       }
     }
+
+    hasLoadedPricesAtLeastOnce = true;
+    lastLoadedLeagueId = currentLeagueId;
+    updateRefreshControls();
   } catch (error) {
     console.error('Failed to load prices:', error);
   }
@@ -1297,6 +1425,7 @@ export function initPrices(): void {
   const sortHeaders = document.querySelectorAll('.prices-table th[data-sort]');
   const pricesBody = document.getElementById('pricesTableBody');
   const seasonSelect = document.getElementById('pricesSeasonSelect') as HTMLSelectElement | null;
+  const refreshButton = document.getElementById('pricesRefreshBtn') as HTMLButtonElement | null;
   const detailBackBtn = document.getElementById('pricesDetailBackBtn');
   const detailNameBtn = document.getElementById('pricesDetailName') as HTMLButtonElement | null;
   const rangeSliderShell = document.getElementById('pricesRangeSliderShell') as HTMLElement | null;
@@ -1353,6 +1482,7 @@ export function initPrices(): void {
     currentLeagueId = seasonSelect.value;
     seasonSelect.addEventListener('change', () => {
       currentLeagueId = seasonSelect.value;
+      nextRefreshAllowedAt = getCachedHistoryForLeague(currentLeagueId)?.nextRefreshAllowedAt ?? 0;
       detailHistoryCache.clear();
       detailHistoryLoadedKeys.clear();
       detailFullHistory = [];
@@ -1365,10 +1495,17 @@ export function initPrices(): void {
       cloudSparklineHistoryCache.clear();
       last7HistoryLoadedAt = 0;
       last7HistoryLeagueId = '';
+      hasLoadedPricesAtLeastOnce = false;
       void loadPrices();
       if (isDetailViewOpen && selectedBaseId) {
         void showItemDetail(selectedBaseId);
       }
+    });
+  }
+
+  if (refreshButton) {
+    refreshButton.addEventListener('click', () => {
+      void loadPrices({ manualRefresh: true });
     });
   }
 
@@ -1467,8 +1604,12 @@ export function initPrices(): void {
         if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
           const isActive = pricesPage.classList.contains('active');
           if (isActive) {
-            // Reload prices when page becomes active (in case prices were updated)
-            loadPrices();
+            const leagueChanged = lastLoadedLeagueId !== currentLeagueId;
+            if (!hasLoadedPricesAtLeastOnce || leagueChanged) {
+              hasLoadedPricesAtLeastOnce = true;
+              lastLoadedLeagueId = currentLeagueId;
+              void loadPrices();
+            }
           }
         }
       });
@@ -1479,7 +1620,9 @@ export function initPrices(): void {
     // Hash-based startup navigation can activate prices before this observer exists.
     // If the page is already active at init time, trigger the initial data load now.
     if (pricesPage.classList.contains('active')) {
-      loadPrices();
+      hasLoadedPricesAtLeastOnce = true;
+      lastLoadedLeagueId = currentLeagueId;
+      void loadPrices();
     }
   }
 
@@ -1490,9 +1633,11 @@ export function initPrices(): void {
   
   // Listen for inventory updates to refresh prices
   webAPI.onInventoryUpdate(() => {
-    const pricesPage = document.getElementById('page-prices');
-    if (pricesPage?.classList.contains('active')) {
-      loadPrices();
-    }
+    // Inventory updates should not trigger cloud reads on the Prices page.
+    // The prices list refresh is manually controlled by the refresh button.
   });
+
+  nextRefreshAllowedAt = getCachedHistoryForLeague(currentLeagueId)?.nextRefreshAllowedAt ?? 0;
+  startRefreshCountdown();
+  updateRefreshControls();
 }

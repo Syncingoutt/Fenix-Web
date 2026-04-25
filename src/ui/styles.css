@@ -4174,8 +4174,15 @@ body.overlay-widget {
 .prices-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: calc(12px * var(--scale));
   margin-bottom: calc(16px * var(--scale));
+}
+
+.prices-header-actions {
+  display: flex;
+  align-items: center;
+  gap: calc(10px * var(--scale));
 }
 
 .prices-item-detail {
@@ -4323,6 +4330,37 @@ body.overlay-widget {
 
 .prices-season-select:focus {
   border-color: var(--primary);
+}
+
+.prices-refresh-btn {
+  border: 1px solid var(--primary);
+  background: rgba(222, 92, 11, 0.14);
+  color: var(--text);
+  font-size: calc(var(--text-small) * var(--text-scale));
+  font-weight: 600;
+  cursor: pointer;
+  padding: calc(12px * var(--scale)) calc(16px * var(--scale));
+  min-width: calc(165px * var(--scale));
+  transition: opacity 0.15s ease, filter 0.15s ease, background-color 0.15s ease;
+}
+
+.prices-refresh-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.prices-refresh-btn:disabled,
+.prices-refresh-btn.is-cooldown {
+  cursor: not-allowed;
+  border-color: var(--border);
+  background: var(--bg-shade);
+  color: var(--border);
+  opacity: 0.82;
+}
+
+.prices-refresh-status {
+  margin-bottom: calc(10px * var(--scale));
+  color: var(--border);
+  font-size: calc(var(--text-small) * var(--text-scale));
 }
 
 .prices-search-input {

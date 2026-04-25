@@ -28,8 +28,8 @@
       updateScale();
       window.addEventListener('resize', updateScale);
     </script>
-    <script type="module" crossorigin src="./assets/main-BWJZ05hG.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/main-BZ_xj6sB.css">
+    <script type="module" crossorigin src="./assets/main-D50J-sYV.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/main-B8vXxwYf.css">
   </head>
 
   <body class="layout-style-1">
@@ -366,10 +366,14 @@
                     <input type="text" id="pricesSearchInput" class="prices-search-input" placeholder="Search by item...">
                     <button id="pricesClearSearch" class="prices-clear-search" style="display: none;">✕</button>
                   </div>
-                  <select id="pricesSeasonSelect" class="prices-season-select">
-                    <option value="s12-lunaria">S12 Lunaria</option>
-                  </select>
+                  <div class="prices-header-actions">
+                    <select id="pricesSeasonSelect" class="prices-season-select">
+                      <option value="s12-lunaria">S12 Lunaria</option>
+                    </select>
+                    <button id="pricesRefreshBtn" class="prices-refresh-btn" type="button">Refresh prices</button>
+                  </div>
                 </div>
+                <div id="pricesRefreshStatus" class="prices-refresh-status" aria-live="polite">Refresh ready</div>
                 <div class="prices-table-wrapper">
                   <table class="prices-table">
                     <thead>
